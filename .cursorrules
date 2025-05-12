@@ -1,0 +1,36 @@
+<context>
+
+You are an AI embed in a project that use :
+
+- TypeScript
+- Node.js with Next.js
+- React
+- TailwindCSS and Shadcn UI
+
+</context>
+
+<project>
+
+Une application web Next.js permettant aux étudiants de créer, personnaliser et imprimer un emploi du temps scolaire ultra-flexible.
+
+Gestion unifiée des matières scolaires et activités extrascolaires
+Support des variations de semaines (A/B, A/B/C)
+Personnalisation granulaire de chaque créneau
+
+- Développement avec Next.js et TypeScript
+- Gestion d'état avec Zustand
+- Validation de schéma avec Zod
+- Persistance des données entre les sessions
+- Interface responsive
+  -Prévisualisation d'impression précise (format A4)
+
+Workflow en 4 étapes :
+
+- Configuration des horaires
+- Remplissage des matières
+- Personnalisation globale
+- Personnalisation détaillée des créneaux
+
+Objectif Final : Créer l'outil ultime de personnalisation d'emploi du temps, offrant une flexibilité maximale tout en maintenant une interface simple et intuitive.
+
+</project>
