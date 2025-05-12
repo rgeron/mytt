@@ -58,34 +58,36 @@ export function TabsBar({
   };
 
   return (
-    <div className="bg-white shadow-sm rounded-md border border-gray-200 py-4 px-6">
-      <Stepper
-        value={activeStep}
-        onValueChange={handleValueChange}
-        className="w-full"
-      >
-        {steps.map(({ step, title, description }) => (
-          <StepperItem
-            key={step}
-            step={step}
-            completed={activeStep > step}
-            className="[&:not(:last-child)]:flex-1"
-          >
-            <StepperTrigger className="gap-3 flex-col sm:flex-row sm:items-center px-1">
-              <StepperIndicator className="size-6" />
-              <div className="text-center sm:text-left mt-1 sm:mt-0">
-                <StepperTitle className="text-sm font-medium">
-                  {title}
-                </StepperTitle>
-                <StepperDescription className="hidden sm:block text-xs">
-                  {description}
-                </StepperDescription>
-              </div>
-            </StepperTrigger>
-            {step < steps.length - 1 && <StepperSeparator className="mx-2" />}
-          </StepperItem>
-        ))}
-      </Stepper>
+    <div className="flex justify-center">
+      <div className="bg-white shadow-sm rounded-full border border-gray-200 py-2 px-10 max-w-4xl w-[95%] mt-2">
+        <Stepper
+          value={activeStep}
+          onValueChange={handleValueChange}
+          className="w-full"
+        >
+          {steps.map(({ step, title, description }) => (
+            <StepperItem
+              key={step}
+              step={step}
+              completed={activeStep > step}
+              className="[&:not(:last-child)]:flex-1"
+            >
+              <StepperTrigger className="gap-3 flex-col sm:flex-row sm:items-center px-1">
+                <StepperIndicator className="size-6" />
+                <div className="text-center sm:text-left mt-1 sm:mt-0">
+                  <StepperTitle className="text-sm font-medium">
+                    {title}
+                  </StepperTitle>
+                  <StepperDescription className="hidden sm:block text-xs">
+                    {description}
+                  </StepperDescription>
+                </div>
+              </StepperTrigger>
+              {step < steps.length - 1 && <StepperSeparator className="mx-2" />}
+            </StepperItem>
+          ))}
+        </Stepper>
+      </div>
     </div>
   );
 }
