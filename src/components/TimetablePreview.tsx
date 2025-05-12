@@ -118,11 +118,6 @@ export function TimetablePreview() {
           </div>
         </div>
       </div>
-
-      {/* Print info note */}
-      <div className="mt-2 text-sm text-gray-600 text-center">
-        Format A4 Paysage (297mm × 210mm)
-      </div>
     </div>
   );
 }

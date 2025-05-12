@@ -1,13 +1,10 @@
 "use client";
 
 import { useTimetableStore } from "@/src/lib/store/timetable-store";
-import { useState } from "react";
 
-export function ConfigPanel() {
-  const [activeTab, setActiveTab] = useState<
-    "schedule" | "subjects" | "display" | "slots"
-  >("schedule");
+type TabType = "schedule" | "subjects" | "display" | "slots";
 
+export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
   const {
     title,
     subtitle,
@@ -22,50 +19,6 @@ export function ConfigPanel() {
   return (
     <div className="flex flex-col gap-4 h-full">
       <h2 className="text-xl font-semibold">Options de personnalisation</h2>
-
-      {/* Tabs for different configuration sections */}
-      <div className="flex border-b">
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "schedule"
-              ? "border-b-2 border-blue-600 font-medium"
-              : "text-gray-600"
-          }`}
-          onClick={() => setActiveTab("schedule")}
-        >
-          Horaires
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "subjects"
-              ? "border-b-2 border-blue-600 font-medium"
-              : "text-gray-600"
-          }`}
-          onClick={() => setActiveTab("subjects")}
-        >
-          Matières
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "display"
-              ? "border-b-2 border-blue-600 font-medium"
-              : "text-gray-600"
-          }`}
-          onClick={() => setActiveTab("display")}
-        >
-          Affichage
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "slots"
-              ? "border-b-2 border-blue-600 font-medium"
-              : "text-gray-600"
-          }`}
-          onClick={() => setActiveTab("slots")}
-        >
-          Détails
-        </button>
-      </div>
 
       {/* Content for each tab */}
       <div className="flex-1 overflow-y-auto">
