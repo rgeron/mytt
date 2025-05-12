@@ -25,16 +25,17 @@ export function TimetablePreview() {
   const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
 
   return (
-    <div className="relative">
+    <div className="relative h-full w-full flex flex-col justify-center">
       {/* A4 Paper Preview - Landscape orientation */}
       <div
         className="bg-white shadow-lg border border-gray-300 overflow-hidden"
         style={{
           // A4 aspect ratio for landscape orientation (1.414:1)
-          width: "min(100%, 1123px)", // 297mm at 96 DPI = ~1123px
-          height: "min(100%, 794px)", // 210mm at 96 DPI = ~794px
+          width: "98%", // Take up almost all of the container width
+          height: "auto", // Height will be determined by aspect ratio
           aspectRatio: "1.414/1",
           margin: "0 auto",
+          maxHeight: "95vh", // Limit height to avoid overflow
         }}
       >
         {/* Timetable content */}
@@ -119,7 +120,7 @@ export function TimetablePreview() {
       </div>
 
       {/* Print info note */}
-      <div className="mt-4 text-sm text-gray-600 text-center">
+      <div className="mt-2 text-sm text-gray-600 text-center">
         Format A4 Paysage (297mm × 210mm)
       </div>
     </div>

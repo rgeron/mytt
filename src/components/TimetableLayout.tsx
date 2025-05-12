@@ -12,7 +12,7 @@ export function TimetableLayout() {
       </div>
 
       {/* Timetable Preview - 70% width on desktop, full width on mobile */}
-      <div className="w-full lg:w-[70%] p-4 flex justify-center items-start overflow-auto">
+      <div className="w-full lg:w-[70%] p-2 flex justify-center items-center overflow-auto h-screen">
         <TimetablePreview />
       </div>
     </div>
