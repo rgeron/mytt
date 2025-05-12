@@ -28,6 +28,7 @@ export function TimetablePreview() {
     <div className="relative h-full w-full flex flex-col justify-center">
       {/* A4 Paper Preview - Landscape orientation */}
       <div
+        id="timetable-preview"
         className="bg-white shadow-lg border border-gray-300 overflow-hidden"
         style={{
           // A4 aspect ratio for landscape orientation (1.414:1)

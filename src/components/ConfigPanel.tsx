@@ -2,6 +2,7 @@
 
 import { useTimetableStore } from "@/src/lib/store/timetable-store";
 import { PrinterIcon } from "lucide-react";
+import { useEffect } from "react";
 
 type TabType = "schedule" | "subjects" | "display" | "slots";
 
@@ -17,12 +18,72 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
     setWeekType,
   } = useTimetableStore();
 
+  // Add print stylesheet
+  useEffect(() => {
+    // Create a style element for print media
+    const style = document.createElement("style");
+    style.id = "print-styles";
+    style.media = "print";
+    style.innerHTML = `
+      @page {
+        size: A4 landscape;
+        margin: 0.5cm;
+      }
+      
+      @media print {
+        html, body {
+          width: 29.7cm;
+          height: 21cm;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+        
+        body * {
+          visibility: hidden;
+        }
+        
+        #timetable-preview, #timetable-preview * {
+          visibility: visible;
+        }
+        
+        #timetable-preview {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+        
+        .no-print {
+          display: none !important;
+        }
+      }
+    `;
+
+    // Add it to the document if it doesn't exist yet
+    if (!document.getElementById("print-styles")) {
+      document.head.appendChild(style);
+    }
+
+    // Clean up when component unmounts
+    return () => {
+      const existingStyle = document.getElementById("print-styles");
+      if (existingStyle) {
+        existingStyle.remove();
+      }
+    };
+  }, []);
+
   const handlePrint = () => {
+    // Use browser's print functionality with our print styles
     window.print();
   };
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full no-print">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">MON EMPLOI DU TEMPS</h2>
         <button
