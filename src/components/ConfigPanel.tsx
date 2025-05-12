@@ -18,7 +18,7 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      <h2 className="text-xl font-semibold">Options de personnalisation</h2>
+      <h2 className="text-xl font-semibold">MON EMPLOI DU TEMPS</h2>
 
       {/* Content for each tab */}
       <div className="flex-1 overflow-y-auto">
@@ -97,9 +97,9 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
 
         {activeTab === "display" && (
           <div className="space-y-4">
-            <h3 className="font-medium">Personnalisation de l'affichage</h3>
+            <h3 className="font-medium">Personnalisation de l&apos;affichage</h3>
             <div className="text-sm text-gray-600 mb-4">
-              Modifiez l'apparence et les informations générales
+              Modifiez l&apos;apparence et les informations générales
             </div>
 
             <div className="space-y-3">

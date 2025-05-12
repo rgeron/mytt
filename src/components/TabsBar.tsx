@@ -1,6 +1,48 @@
 "use client";
 
+import {
+  Stepper,
+  StepperDescription,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "./ui/stepper";
+
 type TabType = "schedule" | "subjects" | "display" | "slots";
+
+const tabToIndex = {
+  schedule: 0,
+  subjects: 1,
+  display: 2,
+  slots: 3,
+};
+
+const indexToTab: TabType[] = ["schedule", "subjects", "display", "slots"];
+
+const steps = [
+  {
+    step: 0,
+    title: "Horaires",
+    description: "Jours et heures",
+  },
+  {
+    step: 1,
+    title: "Matières",
+    description: "Contenu des cours",
+  },
+  {
+    step: 2,
+    title: "Global",
+    description: "Style général",
+  },
+  {
+    step: 3,
+    title: "Détails",
+    description: "Options avancées",
+  },
+];
 
 export function TabsBar({
   activeTab,
@@ -9,50 +51,41 @@ export function TabsBar({
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
 }) {
+  const activeStep = tabToIndex[activeTab];
+
+  const handleValueChange = (step: number) => {
+    setActiveTab(indexToTab[step]);
+  };
+
   return (
-    <div className="bg-white shadow-sm rounded-t-md border-b border-gray-200">
-      <div className="flex">
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "schedule"
-              ? "border-b-2 border-blue-600 font-medium text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-          onClick={() => setActiveTab("schedule")}
-        >
-          1. Horaires
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "subjects"
-              ? "border-b-2 border-blue-600 font-medium text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-          onClick={() => setActiveTab("subjects")}
-        >
-          2. Matières
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "display"
-              ? "border-b-2 border-blue-600 font-medium text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-          onClick={() => setActiveTab("display")}
-        >
-          3. Affichage
-        </button>
-        <button
-          className={`py-2 px-4 ${
-            activeTab === "slots"
-              ? "border-b-2 border-blue-600 font-medium text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-          onClick={() => setActiveTab("slots")}
-        >
-          4. Détails
-        </button>
-      </div>
+    <div className="bg-white shadow-sm rounded-md border border-gray-200 py-4 px-6">
+      <Stepper
+        value={activeStep}
+        onValueChange={handleValueChange}
+        className="w-full"
+      >
+        {steps.map(({ step, title, description }) => (
+          <StepperItem
+            key={step}
+            step={step}
+            completed={activeStep > step}
+            className="[&:not(:last-child)]:flex-1"
+          >
+            <StepperTrigger className="gap-3 flex-col sm:flex-row sm:items-center px-1">
+              <StepperIndicator className="size-6" />
+              <div className="text-center sm:text-left mt-1 sm:mt-0">
+                <StepperTitle className="text-sm font-medium">
+                  {title}
+                </StepperTitle>
+                <StepperDescription className="hidden sm:block text-xs">
+                  {description}
+                </StepperDescription>
+              </div>
+            </StepperTrigger>
+            {step < steps.length - 1 && <StepperSeparator className="mx-2" />}
+          </StepperItem>
+        ))}
+      </Stepper>
     </div>
   );
 }
