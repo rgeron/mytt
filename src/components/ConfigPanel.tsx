@@ -1,6 +1,7 @@
 "use client";
 
 import { useTimetableStore } from "@/src/lib/store/timetable-store";
+import { PrinterIcon } from "lucide-react";
 
 type TabType = "schedule" | "subjects" | "display" | "slots";
 
@@ -16,9 +17,22 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
     setWeekType,
   } = useTimetableStore();
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="flex flex-col gap-4 h-full">
-      <h2 className="text-xl font-semibold">MON EMPLOI DU TEMPS</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">MON EMPLOI DU TEMPS</h2>
+        <button
+          onClick={handlePrint}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="Imprimer"
+        >
+          <PrinterIcon className="size-5" />
+        </button>
+      </div>
 
       {/* Content for each tab */}
       <div className="flex-1 overflow-y-auto">
@@ -97,7 +111,9 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
 
         {activeTab === "display" && (
           <div className="space-y-4">
-            <h3 className="font-medium">Personnalisation de l&apos;affichage</h3>
+            <h3 className="font-medium">
+              Personnalisation de l&apos;affichage
+            </h3>
             <div className="text-sm text-gray-600 mb-4">
               Modifiez l&apos;apparence et les informations générales
             </div>
@@ -133,7 +149,9 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
                 </label>
                 <select
                   value={weekType}
-                  onChange={(e) => setWeekType(e.target.value as any)}
+                  onChange={(e) =>
+                    setWeekType(e.target.value as "single" | "ab" | "abc")
+                  }
                   className="border rounded p-2 w-full"
                 >
                   <option value="single">Semaine unique</option>
@@ -153,17 +171,11 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
             </div>
 
             <div className="text-sm text-center text-gray-500 p-6 border border-dashed rounded">
-              Sélectionnez d'abord un créneau sur la grille pour le modifier
+              Sélectionnez d&apos;abord un créneau sur la grille pour le
+              modifier
             </div>
           </div>
         )}
-      </div>
-
-      {/* Footer with actions */}
-      <div className="pt-4 mt-auto border-t">
-        <button className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-          Imprimer
-        </button>
       </div>
     </div>
   );
