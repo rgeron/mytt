@@ -77,7 +77,7 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
 
   return (
     <>
-      <div className="flex flex-col gap-4 h-full no-print">
+      <div className="flex flex-col h-full no-print">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">MON EMPLOI DU TEMPS</h2>
           <button
@@ -89,8 +89,8 @@ export function ConfigPanel({ activeTab }: { activeTab: TabType }) {
           </button>
         </div>
 
-        {/* Content for each tab */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Content for each tab - made scrollable */}
+        <div className="flex-1 overflow-y-auto mt-4 pr-2">
           {activeTab === "schedule" && <SchedulePanel />}
           {activeTab === "subjects" && <SubjectsPanel />}
           {activeTab === "display" && <DisplayPanel />}

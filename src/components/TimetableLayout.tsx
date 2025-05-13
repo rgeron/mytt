@@ -9,14 +9,14 @@ export function TimetableLayout() {
   const [activeTab, setActiveTab] = useState<TabType>("schedule");
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-100">
+    <div className="flex flex-col lg:flex-row h-screen bg-gray-100 overflow-hidden">
       {/* Config Panel - 30% width on desktop, full width on mobile */}
-      <div className="w-full lg:w-[30%] bg-white p-4 shadow-md overflow-y-auto">
+      <div className="w-full lg:w-[30%] bg-white p-4 shadow-md h-full overflow-hidden">
         <ConfigPanel activeTab={activeTab} />
       </div>
 
       {/* Timetable Preview with Tabs Bar - 70% width on desktop, full width on mobile */}
-      <div className="w-full lg:w-[70%] flex flex-col">
+      <div className="w-full lg:w-[70%] flex flex-col h-full overflow-hidden">
         {/* Tabs Bar */}
         <div className="p-2 bg-gray-100">
           <TabsBar activeTab={activeTab} setActiveTab={setActiveTab} />
