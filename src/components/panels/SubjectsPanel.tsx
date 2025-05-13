@@ -1,6 +1,6 @@
 "use client";
 
-import { useTimetableStore } from "@/src/lib/store/timetable-store";
+import { useTimetableStore } from "@/lib/store/timetable-store";
 
 export function SubjectsPanel() {
   const { subjects } = useTimetableStore();
