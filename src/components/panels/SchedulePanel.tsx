@@ -31,6 +31,20 @@ function frenchToIsoTime(frenchTime: string): string {
   return frenchTime; // Return as is if not in expected format
 }
 
+// Checks if a string is likely to become a valid French time format
+function isPartialFrenchTime(value: string): boolean {
+  // Allow 1-2 digits for hours
+  if (/^\d{1,2}$/.test(value)) return true;
+
+  // Allow digit followed by 'h'
+  if (/^\d{1,2}h$/.test(value)) return true;
+
+  // Allow digit + 'h' + 0-2 digits for minutes
+  if (/^\d{1,2}h\d{0,2}$/.test(value)) return true;
+
+  return false;
+}
+
 export function SchedulePanel() {
   const {
     timeSlots: storeTimeSlots,
@@ -51,6 +65,9 @@ export function SchedulePanel() {
   const timeSlotsRef = useRef(timeSlots);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // For end time input field
+  const [endTimeInput, setEndTimeInput] = useState<string>("");
+
   // Update local state when store changes
   useEffect(() => {
     const updatedTimeSlots = storeTimeSlots.map((slot, index) => ({
@@ -60,6 +77,13 @@ export function SchedulePanel() {
     }));
     setTimeSlots(updatedTimeSlots);
     timeSlotsRef.current = updatedTimeSlots;
+
+    // Update end time input field
+    if (updatedTimeSlots.length > 0) {
+      setEndTimeInput(
+        isoToFrenchTime(updatedTimeSlots[updatedTimeSlots.length - 1].end)
+      );
+    }
   }, [storeTimeSlots]);
 
   const handleTimeSlotChange = (
@@ -106,6 +130,34 @@ export function SchedulePanel() {
 
       return updatedSlots;
     });
+  };
+
+  // Complete the end time input format if needed
+  const handleEndTimeBlur = () => {
+    if (/^\d{1,2}$/.test(endTimeInput)) {
+      // If just number, append "h00"
+      const completeValue = `${endTimeInput}h00`;
+      setEndTimeInput(completeValue);
+      const isoValue = frenchToIsoTime(completeValue);
+      handleTimeSlotChange(timeSlots.length, "end", isoValue);
+    } else if (/^\d{1,2}h$/.test(endTimeInput)) {
+      // If number followed by 'h', append "00"
+      const completeValue = `${endTimeInput}00`;
+      setEndTimeInput(completeValue);
+      const isoValue = frenchToIsoTime(completeValue);
+      handleTimeSlotChange(timeSlots.length, "end", isoValue);
+    } else if (/^\d{1,2}h\d$/.test(endTimeInput)) {
+      // If number followed by 'h' and one digit, append "0"
+      const completeValue = `${endTimeInput}0`;
+      setEndTimeInput(completeValue);
+      const isoValue = frenchToIsoTime(completeValue);
+      handleTimeSlotChange(timeSlots.length, "end", isoValue);
+    } else if (!/^\d{1,2}h\d{2}$/.test(endTimeInput)) {
+      // Revert to the original value if invalid format
+      if (timeSlots.length > 0) {
+        setEndTimeInput(isoToFrenchTime(timeSlots[timeSlots.length - 1].end));
+      }
+    }
   };
 
   // Save changes to store
@@ -317,16 +369,24 @@ export function SchedulePanel() {
               <div className="relative">
                 <Input
                   id={`end-${timeSlots.length}`}
-                  value={
-                    timeSlots.length > 0
-                      ? isoToFrenchTime(timeSlots[timeSlots.length - 1].end)
-                      : ""
-                  }
+                  value={endTimeInput}
                   onChange={(e) => {
-                    if (timeSlots.length > 0) {
-                      const newValue = e.target.value;
+                    const newValue = e.target.value;
+                    setEndTimeInput(newValue);
+
+                    // Only send updates for complete inputs
+                    if (
+                      timeSlots.length > 0 &&
+                      (newValue === "" || /^\d{1,2}h\d{2}$/.test(newValue))
+                    ) {
                       const isoValue = frenchToIsoTime(newValue);
                       handleTimeSlotChange(timeSlots.length, "end", isoValue);
+                    }
+                  }}
+                  onBlur={handleEndTimeBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.currentTarget.blur();
                     }
                   }}
                   className="h-9 text-sm w-28 pr-2 rounded-md border-muted-foreground/20 focus:border-primary focus:ring-1 focus:ring-primary transition-all"

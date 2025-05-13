@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type TimeSlot = {
   id: number;
@@ -41,6 +42,20 @@ function frenchToIsoTime(frenchTime: string): string {
   return frenchTime; // Return as is if not in expected format
 }
 
+// Checks if a string is likely to become a valid French time format
+function isPartialFrenchTime(value: string): boolean {
+  // Allow 1-2 digits for hours
+  if (/^\d{1,2}$/.test(value)) return true;
+
+  // Allow digit followed by 'h'
+  if (/^\d{1,2}h$/.test(value)) return true;
+
+  // Allow digit + 'h' + 0-2 digits for minutes
+  if (/^\d{1,2}h\d{0,2}$/.test(value)) return true;
+
+  return false;
+}
+
 export function TimelineSlot({
   slot,
   onChange,
@@ -48,10 +63,59 @@ export function TimelineSlot({
   isFirst,
   compact = false,
 }: TimelineSlotProps) {
+  // Local state for the input field to allow partial values
+  const [inputValue, setInputValue] = useState(isoToFrenchTime(slot.start));
+
+  // Update local state when props change
+  useEffect(() => {
+    setInputValue(isoToFrenchTime(slot.start));
+  }, [slot.start]);
+
   const handleInputChange = (field: "start" | "end", value: string) => {
-    // Convert the French format input to ISO format for the store
-    const isoValue = frenchToIsoTime(value);
-    onChange(slot.id, field, isoValue);
+    // Only validate and convert when the input is complete
+    if (value === "" || /^\d{1,2}h\d{2}$/.test(value)) {
+      const isoValue = frenchToIsoTime(value);
+      onChange(slot.id, field, isoValue);
+    } else if (isPartialFrenchTime(value)) {
+      // If it's a partial valid input, just update local state without validation
+      setInputValue(value);
+    }
+  };
+
+  // Handle blur event to finalize partial inputs
+  const handleBlur = () => {
+    // Complete the input format if needed
+    if (/^\d{1,2}$/.test(inputValue)) {
+      // If just number, append "h00"
+      const completeValue = `${inputValue}h00`;
+      setInputValue(completeValue);
+      const isoValue = frenchToIsoTime(completeValue);
+      onChange(slot.id, "start", isoValue);
+      if (!isFirst) {
+        onChange(slot.id, "end", isoValue);
+      }
+    } else if (/^\d{1,2}h$/.test(inputValue)) {
+      // If number followed by 'h', append "00"
+      const completeValue = `${inputValue}00`;
+      setInputValue(completeValue);
+      const isoValue = frenchToIsoTime(completeValue);
+      onChange(slot.id, "start", isoValue);
+      if (!isFirst) {
+        onChange(slot.id, "end", isoValue);
+      }
+    } else if (/^\d{1,2}h\d$/.test(inputValue)) {
+      // If number followed by 'h' and one digit, append "0"
+      const completeValue = `${inputValue}0`;
+      setInputValue(completeValue);
+      const isoValue = frenchToIsoTime(completeValue);
+      onChange(slot.id, "start", isoValue);
+      if (!isFirst) {
+        onChange(slot.id, "end", isoValue);
+      }
+    } else {
+      // Revert to the original value if invalid format
+      setInputValue(isoToFrenchTime(slot.start));
+    }
   };
 
   return (
@@ -82,16 +146,26 @@ export function TimelineSlot({
         <div className="relative">
           <Input
             id={`time-point-${slot.id}`}
-            value={isoToFrenchTime(slot.start)}
+            value={inputValue}
             onChange={(e) => {
               const newValue = e.target.value;
+              setInputValue(newValue);
 
-              // Update this slot's start time
-              handleInputChange("start", newValue);
+              // Only send updates for complete inputs
+              if (newValue === "" || /^\d{1,2}h\d{2}$/.test(newValue)) {
+                // Update this slot's start time
+                handleInputChange("start", newValue);
 
-              // If not the first slot, also update the previous slot's end time
-              if (!isFirst) {
-                handleInputChange("end", newValue);
+                // If not the first slot, also update the previous slot's end time
+                if (!isFirst) {
+                  handleInputChange("end", newValue);
+                }
+              }
+            }}
+            onBlur={handleBlur}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.currentTarget.blur();
               }
             }}
             className={`${
