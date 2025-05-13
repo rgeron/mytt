@@ -29,6 +29,7 @@ type TimetableState = {
   entries: TimetableEntry[];
   weekType: "single" | "ab" | "abc";
   currentWeekType: "a" | "b" | "c";
+  showSaturday: boolean;
 
   // Actions
   setTitle: (title: string) => void;
@@ -47,6 +48,7 @@ type TimetableState = {
   ) => void;
   setWeekType: (type: "single" | "ab" | "abc") => void;
   setCurrentWeekType: (type: "a" | "b" | "c") => void;
+  setShowSaturday: (show: boolean) => void;
   reset: () => void;
 };
 
@@ -71,6 +73,7 @@ const initialState = {
   entries: [],
   weekType: "single" as const,
   currentWeekType: "a" as const,
+  showSaturday: false,
 };
 
 export const useTimetableStore = create<TimetableState>()(
@@ -132,6 +135,7 @@ export const useTimetableStore = create<TimetableState>()(
 
       setWeekType: (weekType) => set({ weekType }),
       setCurrentWeekType: (currentWeekType) => set({ currentWeekType }),
+      setShowSaturday: (showSaturday) => set({ showSaturday }),
 
       reset: () => set(initialState),
     }),

@@ -4,7 +4,8 @@ import { useTimetableStore } from "@/lib/store/timetable-store";
 import React, { useMemo } from "react";
 
 export function TimetablePreview() {
-  const { title, subtitle, timeSlots, subjects, entries } = useTimetableStore();
+  const { title, subtitle, timeSlots, subjects, entries, showSaturday } =
+    useTimetableStore();
 
   // Calculate time slot durations to create proportional heights
   const timeSlotDurations = useMemo(() => {
@@ -40,6 +41,10 @@ export function TimetablePreview() {
 
   // Day names in French
   const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
+  // Add Saturday if enabled
+  const displayDayNames = showSaturday ? [...dayNames, "Samedi"] : dayNames;
+  // Number of days to display
+  const numberOfDays = showSaturday ? 6 : 5;
 
   return (
     <div className="relative h-full w-full flex flex-col justify-center">
@@ -69,7 +74,7 @@ export function TimetablePreview() {
             <div
               className="flex-1 grid gap-1 bg-gray-100 overflow-hidden"
               style={{
-                gridTemplateColumns: "auto repeat(5, 1fr)",
+                gridTemplateColumns: `auto repeat(${numberOfDays}, 1fr)`,
                 gridTemplateRows: `auto ${timeSlotDurations
                   .map(
                     (duration) =>
@@ -84,7 +89,7 @@ export function TimetablePreview() {
               </div>
 
               {/* Header: Day columns */}
-              {dayNames.map((day, index) => (
+              {displayDayNames.map((day, index) => (
                 <div
                   key={`day-${index}`}
                   className="bg-blue-600 text-white p-1 text-center text-sm"
@@ -105,7 +110,7 @@ export function TimetablePreview() {
                   </div>
 
                   {/* Entries for each day */}
-                  {Array.from({ length: 5 }).map((_, dayIndex) => {
+                  {Array.from({ length: numberOfDays }).map((_, dayIndex) => {
                     const entry = findEntry(dayIndex, timeIndex);
                     const subject = entry ? findSubject(entry.subjectId) : null;
 

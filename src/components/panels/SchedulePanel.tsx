@@ -2,6 +2,7 @@
 
 import { TimelineSlot } from "@/components/timeline-slot";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useTimetableStore } from "@/lib/store/timetable-store";
 import { Plus, RotateCcw } from "lucide-react";
@@ -37,6 +38,8 @@ export function SchedulePanel() {
     addTimeSlot: addStoreTimeSlot,
     removeTimeSlot: removeStoreTimeSlot,
     reset: resetTimetable,
+    showSaturday,
+    setShowSaturday,
   } = useTimetableStore();
 
   // Convert store timeSlots to local state with IDs
@@ -398,6 +401,30 @@ export function SchedulePanel() {
           <span className="text-sm">Réinitialiser</span>
         </Button>
       </div>
+
+      <div className="flex items-center space-x-2 mb-4">
+        <Checkbox
+          id="showSaturday"
+          checked={showSaturday}
+          onCheckedChange={(checked: boolean) => {
+            if (typeof checked === "boolean") {
+              setShowSaturday(checked);
+              toast.success(
+                checked
+                  ? "Samedi ajouté à l'emploi du temps"
+                  : "Samedi retiré de l'emploi du temps"
+              );
+            }
+          }}
+        />
+        <label
+          htmlFor="showSaturday"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+        >
+          Afficher le samedi
+        </label>
+      </div>
+
       <div className="text-sm text-gray-600 mb-4">
         Définissez les plages horaires de votre emploi du temps
       </div>
