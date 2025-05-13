@@ -1,5 +1,6 @@
 "use client";
 
+import { TabType } from "./ConfigPanel";
 import {
   Stepper,
   StepperDescription,
@@ -9,8 +10,6 @@ import {
   StepperTitle,
   StepperTrigger,
 } from "./ui/stepper";
-
-type TabType = "schedule" | "subjects" | "display" | "slots";
 
 const tabToIndex = {
   schedule: 0,

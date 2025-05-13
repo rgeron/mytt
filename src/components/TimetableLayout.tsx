@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ConfigPanel } from "./ConfigPanel";
+import { ConfigPanel, TabType } from "./ConfigPanel";
 import { TabsBar } from "./TabsBar";
 import { TimetablePreview } from "./TimetablePreview";
-
-type TabType = "schedule" | "subjects" | "display" | "slots";
 
 export function TimetableLayout() {
   const [activeTab, setActiveTab] = useState<TabType>("schedule");
