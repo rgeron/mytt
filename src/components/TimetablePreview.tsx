@@ -1,6 +1,7 @@
 "use client";
 
 import { useTimetableStore } from "@/lib/store/timetable-store";
+import { cn } from "@/lib/utils";
 import React, { useMemo } from "react";
 
 export function TimetablePreview() {
@@ -51,28 +52,28 @@ export function TimetablePreview() {
       {/* A4 Paper Preview - Landscape orientation */}
       <div
         id="timetable-preview"
-        className="bg-white shadow-lg border border-gray-300 overflow-hidden"
+        className="bg-white shadow-lg border border-gray-200 rounded-md overflow-hidden"
         style={{
           // A4 aspect ratio for landscape orientation (1.414:1)
-          width: "98%", // Take up almost all of the container width
-          height: "auto", // Height will be determined by aspect ratio
+          width: "98%",
+          height: "auto",
           aspectRatio: "1.414/1",
           margin: "0 auto",
-          maxHeight: "95vh", // Limit height to avoid overflow
+          maxHeight: "95vh",
         }}
       >
         {/* Timetable content */}
-        <div className="h-full w-full p-4 flex flex-col">
-          <div className="text-center mb-3">
-            <h1 className="text-2xl font-bold">{title}</h1>
-            <p className="text-gray-600">{subtitle}</p>
+        <div className="h-full w-full p-6 flex flex-col">
+          <div className="text-center mb-4">
+            <h1 className="text-2xl font-bold text-primary">{title}</h1>
+            <p className="text-muted-foreground text-sm">{subtitle}</p>
           </div>
 
           {/* Timetable grid container - uses flex-1 to take remaining space */}
           <div className="flex-1 flex flex-col">
             {/* Timetable grid */}
             <div
-              className="flex-1 grid gap-1 bg-gray-100 overflow-hidden"
+              className="flex-1 grid gap-1 bg-gray-50 overflow-hidden rounded-md"
               style={{
                 gridTemplateColumns: `auto repeat(${numberOfDays}, 1fr)`,
                 gridTemplateRows: `auto ${timeSlotDurations
@@ -84,7 +85,7 @@ export function TimetablePreview() {
               }}
             >
               {/* Header: Time column */}
-              <div className="bg-blue-600 text-white p-1 text-center text-sm">
+              <div className="bg-primary text-primary-foreground py-2 px-3 text-center font-medium text-sm">
                 Horaires
               </div>
 
@@ -92,7 +93,7 @@ export function TimetablePreview() {
               {displayDayNames.map((day, index) => (
                 <div
                   key={`day-${index}`}
-                  className="bg-blue-600 text-white p-1 text-center text-sm"
+                  className="bg-primary text-primary-foreground py-2 px-1 text-center font-medium text-sm"
                 >
                   {day}
                 </div>
@@ -104,9 +105,10 @@ export function TimetablePreview() {
                   {/* Time slot label */}
                   <div
                     key={`time-${timeIndex}`}
-                    className="bg-gray-200 p-1 text-center text-xs flex items-center justify-center"
+                    className="bg-secondary/30 p-2 text-center text-xs flex flex-col items-center justify-center font-medium"
                   >
-                    {timeSlot.start} - {timeSlot.end}
+                    <span>{timeSlot.start}</span>
+                    <span>{timeSlot.end}</span>
                   </div>
 
                   {/* Entries for each day */}
@@ -117,11 +119,14 @@ export function TimetablePreview() {
                     return (
                       <div
                         key={`cell-${dayIndex}-${timeIndex}`}
-                        className="bg-white p-1 border overflow-hidden"
+                        className={cn(
+                          "bg-card p-2 border border-border overflow-hidden transition-colors",
+                          subject ? "hover:bg-secondary/10" : ""
+                        )}
                         style={{
                           backgroundColor: subject
-                            ? `${subject.color}20`
-                            : "white",
+                            ? `${subject.color}15`
+                            : undefined,
                           borderLeft: subject
                             ? `4px solid ${subject.color}`
                             : undefined,
@@ -129,17 +134,19 @@ export function TimetablePreview() {
                       >
                         {subject && (
                           <div className="flex flex-col h-full">
-                            <div className="font-semibold text-xs truncate">
+                            <div className="font-semibold text-xs text-foreground truncate">
                               {subject.name}
                             </div>
                             {entry?.room && (
-                              <div className="text-xs truncate">
-                                Salle: {entry.room}
+                              <div className="text-xs text-muted-foreground truncate mt-1">
+                                <span className="font-medium">Salle:</span>{" "}
+                                {entry.room}
                               </div>
                             )}
                             {entry?.teacher && (
-                              <div className="text-xs truncate">
-                                Prof: {entry.teacher}
+                              <div className="text-xs text-muted-foreground truncate">
+                                <span className="font-medium">Prof:</span>{" "}
+                                {entry.teacher}
                               </div>
                             )}
                           </div>
