@@ -4,7 +4,7 @@ import { TimelineSlot } from "@/components/timeline-slot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTimetableStore } from "@/lib/store/timetable-store";
-import { Plus } from "lucide-react";
+import { Plus, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -50,6 +50,7 @@ export function SchedulePanel() {
     timeSlots: storeTimeSlots,
     addTimeSlot: addStoreTimeSlot,
     removeTimeSlot: removeStoreTimeSlot,
+    reset: resetTimetable,
   } = useTimetableStore();
 
   // Convert store timeSlots to local state with IDs
@@ -322,9 +323,29 @@ export function SchedulePanel() {
     });
   };
 
+  const handleReset = () => {
+    if (confirm("Êtes-vous sûr de vouloir réinitialiser les horaires ?")) {
+      // Only reset time slots, not the entire timetable
+      resetTimetable();
+      toast.success("Horaires réinitialisés");
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <h3 className="font-medium">Configuration des plages horaires</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="font-medium">Configuration des plages horaires</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-muted-foreground hover:text-primary"
+          onClick={handleReset}
+          title="Réinitialiser les horaires par défaut"
+        >
+          <RotateCcw className="h-3.5 w-3.5 mr-1" />
+          <span className="text-sm">Réinitialiser</span>
+        </Button>
+      </div>
       <div className="text-sm text-gray-600 mb-4">
         Définissez les plages horaires de votre emploi du temps
       </div>
