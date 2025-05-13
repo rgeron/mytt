@@ -67,21 +67,27 @@ export function SchedulePanel() {
     field: "start" | "end",
     value: string
   ) => {
-    // Validate time format
-    if (value && !value.match(/^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/)) {
-      const frenchValue = isoToFrenchTime(value);
-      if (!frenchValue.match(/^(\d{1,2})h(\d{2})?$/)) {
-        toast.error(
-          "Format d'heure invalide. Utilisez le format HhMM (ex: 8h00 ou 14h30)"
-        );
-        return;
-      }
+    // Check if input is in ISO format (HH:MM)
+    const isoFormatRegex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+    // Check if input is in French format (HhMM or Hh)
+    const frenchFormatRegex = /^(\d{1,2})h(\d{2})?$/;
+
+    // Convert input to ISO format for processing if it's in French format
+    let processedValue = value;
+
+    if (frenchFormatRegex.test(value)) {
+      processedValue = frenchToIsoTime(value);
+    } else if (!isoFormatRegex.test(value) && value !== "") {
+      toast.error(
+        "Format d'heure invalide. Utilisez le format HhMM (ex: 8h00 ou 14h30)"
+      );
+      return;
     }
 
     setTimeSlots((currentSlots) => {
       // Create a copy of the current slots
       const updatedSlots = currentSlots.map((slot) =>
-        slot.id === id ? { ...slot, [field]: value } : slot
+        slot.id === id ? { ...slot, [field]: processedValue } : slot
       );
 
       // If changing an end time and it's not the last slot,
@@ -93,7 +99,7 @@ export function SchedulePanel() {
         if (nextSlotIndex !== -1) {
           updatedSlots[nextSlotIndex] = {
             ...updatedSlots[nextSlotIndex],
-            start: value,
+            start: processedValue,
           };
         }
       }

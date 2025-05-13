@@ -1,6 +1,7 @@
 "use client";
 
 import { useTimetableStore } from "@/lib/store/timetable-store";
+import React from "react";
 
 export function TimetablePreview() {
   const { title, subtitle, timeSlots, subjects, entries } = useTimetableStore();
@@ -71,7 +72,7 @@ export function TimetablePreview() {
 
             {/* Time slots and entries */}
             {timeSlots.map((timeSlot, timeIndex) => (
-              <>
+              <React.Fragment key={`slot-row-${timeIndex}`}>
                 {/* Time slot label */}
                 <div
                   key={`time-${timeIndex}`}
@@ -114,7 +115,7 @@ export function TimetablePreview() {
                     </div>
                   );
                 })}
-              </>
+              </React.Fragment>
             ))}
           </div>
         </div>
