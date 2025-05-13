@@ -71,17 +71,6 @@ export function TimelineSlot({
     setInputValue(isoToFrenchTime(slot.start));
   }, [slot.start]);
 
-  const handleInputChange = (field: "start" | "end", value: string) => {
-    // Only validate and convert when the input is complete
-    if (value === "" || /^\d{1,2}h\d{2}$/.test(value)) {
-      const isoValue = frenchToIsoTime(value);
-      onChange(slot.id, field, isoValue);
-    } else if (isPartialFrenchTime(value)) {
-      // If it's a partial valid input, just update local state without validation
-      setInputValue(value);
-    }
-  };
-
   // Handle blur event to finalize partial inputs
   const handleBlur = () => {
     // Complete the input format if needed
@@ -92,7 +81,8 @@ export function TimelineSlot({
       const isoValue = frenchToIsoTime(completeValue);
       onChange(slot.id, "start", isoValue);
       if (!isFirst) {
-        onChange(slot.id, "end", isoValue);
+        // If not the first slot, update the previous slot's end time
+        onChange(slot.id - 1, "end", isoValue);
       }
     } else if (/^\d{1,2}h$/.test(inputValue)) {
       // If number followed by 'h', append "00"
@@ -101,7 +91,8 @@ export function TimelineSlot({
       const isoValue = frenchToIsoTime(completeValue);
       onChange(slot.id, "start", isoValue);
       if (!isFirst) {
-        onChange(slot.id, "end", isoValue);
+        // If not the first slot, update the previous slot's end time
+        onChange(slot.id - 1, "end", isoValue);
       }
     } else if (/^\d{1,2}h\d$/.test(inputValue)) {
       // If number followed by 'h' and one digit, append "0"
@@ -110,7 +101,8 @@ export function TimelineSlot({
       const isoValue = frenchToIsoTime(completeValue);
       onChange(slot.id, "start", isoValue);
       if (!isFirst) {
-        onChange(slot.id, "end", isoValue);
+        // If not the first slot, update the previous slot's end time
+        onChange(slot.id - 1, "end", isoValue);
       }
     } else {
       // Revert to the original value if invalid format
@@ -153,13 +145,18 @@ export function TimelineSlot({
 
               // Only send updates for complete inputs
               if (newValue === "" || /^\d{1,2}h\d{2}$/.test(newValue)) {
+                const isoValue = frenchToIsoTime(newValue);
+
                 // Update this slot's start time
-                handleInputChange("start", newValue);
+                onChange(slot.id, "start", isoValue);
 
                 // If not the first slot, also update the previous slot's end time
                 if (!isFirst) {
-                  handleInputChange("end", newValue);
+                  onChange(slot.id - 1, "end", isoValue);
                 }
+              } else if (isPartialFrenchTime(newValue)) {
+                // If it's a partial valid input, just update local state without validation
+                // This ensures we don't lose the reference to isPartialFrenchTime
               }
             }}
             onBlur={handleBlur}
