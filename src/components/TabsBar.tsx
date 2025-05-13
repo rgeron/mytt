@@ -22,22 +22,22 @@ const indexToTab: TabType[] = ["schedule", "subjects", "display", "slots"];
 
 const steps = [
   {
-    step: 1,
+    step: 0,
     title: "Horaires",
     description: "Jours et heures",
   },
   {
-    step: 2,
+    step: 1,
     title: "Remplir",
     description: "Contenu des cours",
   },
   {
-    step: 3,
+    step: 2,
     title: "Perso. Global",
     description: "Style général",
   },
   {
-    step: 4,
+    step: 3,
     title: "Perso. Créneaux",
     description: "Options avancées",
   },
