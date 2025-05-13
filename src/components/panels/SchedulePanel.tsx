@@ -31,20 +31,6 @@ function frenchToIsoTime(frenchTime: string): string {
   return frenchTime; // Return as is if not in expected format
 }
 
-// Checks if a string is likely to become a valid French time format
-function isPartialFrenchTime(value: string): boolean {
-  // Allow 1-2 digits for hours
-  if (/^\d{1,2}$/.test(value)) return true;
-
-  // Allow digit followed by 'h'
-  if (/^\d{1,2}h$/.test(value)) return true;
-
-  // Allow digit + 'h' + 0-2 digits for minutes
-  if (/^\d{1,2}h\d{0,2}$/.test(value)) return true;
-
-  return false;
-}
-
 export function SchedulePanel() {
   const {
     timeSlots: storeTimeSlots,
@@ -495,8 +481,7 @@ export function SchedulePanel() {
                 onClick={addTimeSlot}
                 title="Ajouter un créneau"
               >
-                <Plus className="h-4 w-4 mr-1" />
-                <span className="text-sm">Ajouter un créneau</span>
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
 
