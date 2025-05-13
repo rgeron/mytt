@@ -1,14 +1,30 @@
 "use client";
 
 import { useTimetableStore } from "@/lib/store/timetable-store";
-import React from "react";
+import React, { useMemo } from "react";
 
 export function TimetablePreview() {
   const { title, subtitle, timeSlots, subjects, entries } = useTimetableStore();
 
-  // A4 paper dimensions in pixels (assuming 96 DPI)
-  // A4 is 297mm × 210mm - We'll simulate these dimensions
-  // For landscape mode, we swap width and height: 297mm × 210mm
+  // Calculate time slot durations to create proportional heights
+  const timeSlotDurations = useMemo(() => {
+    return timeSlots.map((slot) => {
+      const startTime = parseTimeToMinutes(slot.start);
+      const endTime = parseTimeToMinutes(slot.end);
+      return endTime - startTime;
+    });
+  }, [timeSlots]);
+
+  // Calculate total minutes in the day to proportionally size cells
+  const totalDayMinutes = useMemo(() => {
+    return timeSlotDurations.reduce((sum, duration) => sum + duration, 0);
+  }, [timeSlotDurations]);
+
+  // Parse time string (HH:MM) to minutes since midnight
+  function parseTimeToMinutes(timeString: string): number {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours * 60 + minutes;
+  }
 
   // Function to find an entry for a specific day and time slot
   const findEntry = (day: number, timeSlotIndex: number) => {
@@ -41,82 +57,94 @@ export function TimetablePreview() {
         }}
       >
         {/* Timetable content */}
-        <div className="h-full w-full p-8 flex flex-col">
-          <div className="text-center mb-6">
+        <div className="h-full w-full p-4 flex flex-col">
+          <div className="text-center mb-3">
             <h1 className="text-2xl font-bold">{title}</h1>
             <p className="text-gray-600">{subtitle}</p>
           </div>
 
-          {/* Timetable grid */}
-          <div
-            className="flex-1 grid gap-1 bg-gray-100"
-            style={{
-              gridTemplateColumns: "auto repeat(5, 1fr)",
-              gridTemplateRows: `auto repeat(${timeSlots.length}, 1fr)`,
-            }}
-          >
-            {/* Header: Time column */}
-            <div className="bg-blue-600 text-white p-2 text-center">
-              Horaires
-            </div>
-
-            {/* Header: Day columns */}
-            {dayNames.map((day, index) => (
-              <div
-                key={`day-${index}`}
-                className="bg-blue-600 text-white p-2 text-center"
-              >
-                {day}
+          {/* Timetable grid container - uses flex-1 to take remaining space */}
+          <div className="flex-1 flex flex-col">
+            {/* Timetable grid */}
+            <div
+              className="flex-1 grid gap-1 bg-gray-100 overflow-hidden"
+              style={{
+                gridTemplateColumns: "auto repeat(5, 1fr)",
+                gridTemplateRows: `auto ${timeSlotDurations
+                  .map(
+                    (duration) =>
+                      `${Math.max((duration / totalDayMinutes) * 100, 5)}fr`
+                  )
+                  .join(" ")}`,
+              }}
+            >
+              {/* Header: Time column */}
+              <div className="bg-blue-600 text-white p-1 text-center text-sm">
+                Horaires
               </div>
-            ))}
 
-            {/* Time slots and entries */}
-            {timeSlots.map((timeSlot, timeIndex) => (
-              <React.Fragment key={`slot-row-${timeIndex}`}>
-                {/* Time slot label */}
+              {/* Header: Day columns */}
+              {dayNames.map((day, index) => (
                 <div
-                  key={`time-${timeIndex}`}
-                  className="bg-gray-200 p-1 text-center text-sm"
+                  key={`day-${index}`}
+                  className="bg-blue-600 text-white p-1 text-center text-sm"
                 >
-                  {timeSlot.start} - {timeSlot.end}
+                  {day}
                 </div>
+              ))}
 
-                {/* Entries for each day */}
-                {Array.from({ length: 5 }).map((_, dayIndex) => {
-                  const entry = findEntry(dayIndex, timeIndex);
-                  const subject = entry ? findSubject(entry.subjectId) : null;
+              {/* Time slots and entries */}
+              {timeSlots.map((timeSlot, timeIndex) => (
+                <React.Fragment key={`slot-row-${timeIndex}`}>
+                  {/* Time slot label */}
+                  <div
+                    key={`time-${timeIndex}`}
+                    className="bg-gray-200 p-1 text-center text-xs flex items-center justify-center"
+                  >
+                    {timeSlot.start} - {timeSlot.end}
+                  </div>
 
-                  return (
-                    <div
-                      key={`cell-${dayIndex}-${timeIndex}`}
-                      className="bg-white p-1 border min-h-12"
-                      style={{
-                        backgroundColor: subject
-                          ? `${subject.color}20`
-                          : "white",
-                        borderLeft: subject
-                          ? `4px solid ${subject.color}`
-                          : undefined,
-                      }}
-                    >
-                      {subject && (
-                        <div className="flex flex-col h-full">
-                          <div className="font-semibold text-sm">
-                            {subject.name}
+                  {/* Entries for each day */}
+                  {Array.from({ length: 5 }).map((_, dayIndex) => {
+                    const entry = findEntry(dayIndex, timeIndex);
+                    const subject = entry ? findSubject(entry.subjectId) : null;
+
+                    return (
+                      <div
+                        key={`cell-${dayIndex}-${timeIndex}`}
+                        className="bg-white p-1 border overflow-hidden"
+                        style={{
+                          backgroundColor: subject
+                            ? `${subject.color}20`
+                            : "white",
+                          borderLeft: subject
+                            ? `4px solid ${subject.color}`
+                            : undefined,
+                        }}
+                      >
+                        {subject && (
+                          <div className="flex flex-col h-full">
+                            <div className="font-semibold text-xs truncate">
+                              {subject.name}
+                            </div>
+                            {entry?.room && (
+                              <div className="text-xs truncate">
+                                Salle: {entry.room}
+                              </div>
+                            )}
+                            {entry?.teacher && (
+                              <div className="text-xs truncate">
+                                Prof: {entry.teacher}
+                              </div>
+                            )}
                           </div>
-                          {entry?.room && (
-                            <div className="text-xs">Salle: {entry.room}</div>
-                          )}
-                          {entry?.teacher && (
-                            <div className="text-xs">Prof: {entry.teacher}</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </React.Fragment>
-            ))}
+                        )}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>
