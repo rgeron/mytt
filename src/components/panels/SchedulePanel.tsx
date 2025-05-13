@@ -133,6 +133,72 @@ export function SchedulePanel() {
     });
   };
 
+  // Add a new point between two existing points
+  const addMiddlePoint = (id: number) => {
+    // Find the slot at the given ID and the previous slot
+    const currentSlot = timeSlots.find((slot) => slot.id === id);
+    const previousSlot = timeSlots.find((slot) => slot.id === id - 1);
+
+    if (!currentSlot || !previousSlot) return;
+
+    // Calculate the midpoint time between the two slots
+    // Convert start times to minutes since midnight
+    const currentStartTime = currentSlot.start.split(":").map(Number);
+    const previousStartTime = previousSlot.start.split(":").map(Number);
+
+    const currentMinutes = currentStartTime[0] * 60 + currentStartTime[1];
+    const previousMinutes = previousStartTime[0] * 60 + previousStartTime[1];
+
+    // Calculate the midpoint in minutes
+    const midpointMinutes = Math.floor((currentMinutes + previousMinutes) / 2);
+
+    // Convert back to hours and minutes
+    const midpointHours = Math.floor(midpointMinutes / 60);
+    const midpointMins = midpointMinutes % 60;
+
+    // Format as ISO time
+    const midpointTime = `${midpointHours
+      .toString()
+      .padStart(2, "0")}:${midpointMins.toString().padStart(2, "0")}`;
+
+    setTimeSlots((currentSlots) => {
+      // Find the index of the current slot
+      const slotIndex = currentSlots.findIndex((slot) => slot.id === id);
+      if (slotIndex === -1) return currentSlots;
+
+      // Create a new slot with the midpoint time
+      const newSlot = {
+        id: id, // Will be reassigned below
+        start: midpointTime,
+        end: currentSlot.start,
+      };
+
+      // Insert the new slot and update all IDs
+      const updatedSlots = [
+        ...currentSlots.slice(0, slotIndex),
+        newSlot,
+        ...currentSlots.slice(slotIndex),
+      ].map((slot, index) => ({
+        ...slot,
+        id: index + 1,
+      }));
+
+      // Update the previous slot's end time
+      const previousSlotIndex = updatedSlots.findIndex(
+        (slot) => slot.id === previousSlot.id
+      );
+      if (previousSlotIndex !== -1) {
+        updatedSlots[previousSlotIndex] = {
+          ...updatedSlots[previousSlotIndex],
+          end: midpointTime,
+        };
+      }
+
+      toast.success("Point intermédiaire ajouté");
+      return updatedSlots;
+    });
+  };
+
   // Complete the end time input format if needed
   const handleEndTimeBlur = () => {
     if (/^\d{1,2}$/.test(endTimeInput)) {
@@ -364,7 +430,9 @@ export function SchedulePanel() {
                 slot={slot}
                 onChange={handleTimeSlotChange}
                 onDelete={deleteTimeSlot}
+                onAddMiddlePoint={addMiddlePoint}
                 isFirst={index === 0}
+                showAddButton={index > 0}
               />
             ))}
           </div>
