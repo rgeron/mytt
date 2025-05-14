@@ -47,6 +47,26 @@ export function TimetablePreview() {
   // Number of days to display
   const numberOfDays = showSaturday ? 6 : 5;
 
+  const gridTemplateRowsValue = useMemo(() => {
+    if (timeSlots.length === 0) {
+      return "auto"; // Only header row if no time slots
+    }
+    if (totalDayMinutes === 0) {
+      // All slots have zero duration, or no slots (covered by above)
+      // Fallback to equal distribution for existing slots, with a min 1px height.
+      return `auto repeat(${timeSlots.length}, minmax(1px, 1fr))`;
+    }
+    const rowFractions = timeSlotDurations
+      .map((duration) => {
+        const percentage = (duration / totalDayMinutes) * 100;
+        // Use Math.max with a very small positive number to ensure the fr value is valid
+        // and the row can render as a thin bar if percentage is tiny or zero.
+        return `${Math.max(percentage, 0.01)}fr`;
+      })
+      .join(" ");
+    return `auto ${rowFractions}`;
+  }, [timeSlots, timeSlotDurations, totalDayMinutes]);
+
   return (
     <div className="relative h-full w-full flex flex-col justify-center">
       {/* A4 Paper Preview - Landscape orientation */}
@@ -76,12 +96,7 @@ export function TimetablePreview() {
               className="flex-1 grid gap-0.5 bg-gray-50 overflow-hidden rounded-md"
               style={{
                 gridTemplateColumns: `auto repeat(${numberOfDays}, 1fr)`,
-                gridTemplateRows: `auto ${timeSlotDurations
-                  .map(
-                    (duration) =>
-                      `${Math.max((duration / totalDayMinutes) * 100, 5)}fr`
-                  )
-                  .join(" ")}`,
+                gridTemplateRows: gridTemplateRowsValue,
               }}
             >
               {/* Header: Time column */}
@@ -100,62 +115,81 @@ export function TimetablePreview() {
               ))}
 
               {/* Time slots and entries */}
-              {timeSlots.map((timeSlot, timeIndex) => (
-                <React.Fragment key={`slot-row-${timeIndex}`}>
-                  {/* Time slot label */}
-                  <div
-                    key={`time-${timeIndex}`}
-                    className="bg-secondary/30 p-2 text-center text-xs flex flex-col items-center justify-center font-medium"
-                  >
-                    <span>{timeSlot.start}</span>
-                    <span>{timeSlot.end}</span>
-                  </div>
+              {timeSlots.map((timeSlot, timeIndex) => {
+                const slotPercentage =
+                  totalDayMinutes > 0
+                    ? (timeSlotDurations[timeIndex] / totalDayMinutes) * 100
+                    : 0;
+                const showTimeLabels = slotPercentage > 7;
 
-                  {/* Entries for each day */}
-                  {Array.from({ length: numberOfDays }).map((_, dayIndex) => {
-                    const entry = findEntry(dayIndex, timeIndex);
-                    const subject = entry ? findSubject(entry.subjectId) : null;
+                return (
+                  <React.Fragment key={`slot-row-${timeIndex}`}>
+                    {/* Time slot label */}
+                    <div
+                      key={`time-${timeIndex}`}
+                      className="bg-secondary/30 text-center text-xs flex flex-col items-center justify-center font-medium"
+                    >
+                      {showTimeLabels && (
+                        <div className="p-2">
+                          <span>{timeSlot.start}</span>
+                          <span>{timeSlot.end}</span>
+                        </div>
+                      )}
+                    </div>
 
-                    return (
-                      <div
-                        key={`cell-${dayIndex}-${timeIndex}`}
-                        className={cn(
-                          "bg-card p-2 border border-border overflow-hidden transition-colors",
-                          subject ? "hover:bg-secondary/10" : ""
-                        )}
-                        style={{
-                          backgroundColor: subject
-                            ? `${subject.color}15`
-                            : undefined,
-                          borderLeft: subject
-                            ? `4px solid ${subject.color}`
-                            : undefined,
-                        }}
-                      >
-                        {subject && (
-                          <div className="flex flex-col h-full">
-                            <div className="font-semibold text-xs text-foreground truncate">
-                              {subject.name}
+                    {/* Entries for each day */}
+                    {Array.from({ length: numberOfDays }).map((_, dayIndex) => {
+                      const entry = findEntry(dayIndex, timeIndex);
+                      const subject = entry
+                        ? findSubject(entry.subjectId)
+                        : null;
+
+                      return (
+                        <div
+                          key={`cell-${dayIndex}-${timeIndex}`}
+                          className={cn(
+                            "bg-card border border-border overflow-hidden transition-colors",
+                            subject ? "hover:bg-secondary/10" : ""
+                          )}
+                          style={{
+                            backgroundColor: subject
+                              ? `${subject.color}15`
+                              : undefined,
+                            borderLeft: subject
+                              ? `4px solid ${subject.color}`
+                              : undefined,
+                          }}
+                        >
+                          {subject && (
+                            <div
+                              className={cn(
+                                "flex flex-col h-full justify-center",
+                                showTimeLabels ? "p-2" : "p-0"
+                              )}
+                            >
+                              <div className="font-semibold text-xs text-foreground truncate">
+                                {subject.name}
+                              </div>
+                              {entry?.room && showTimeLabels && (
+                                <div className="text-xs text-muted-foreground truncate mt-1">
+                                  <span className="font-medium">Salle:</span>{" "}
+                                  {entry.room}
+                                </div>
+                              )}
+                              {entry?.teacher && showTimeLabels && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  <span className="font-medium">Prof:</span>{" "}
+                                  {entry.teacher}
+                                </div>
+                              )}
                             </div>
-                            {entry?.room && (
-                              <div className="text-xs text-muted-foreground truncate mt-1">
-                                <span className="font-medium">Salle:</span>{" "}
-                                {entry.room}
-                              </div>
-                            )}
-                            {entry?.teacher && (
-                              <div className="text-xs text-muted-foreground truncate">
-                                <span className="font-medium">Prof:</span>{" "}
-                                {entry.teacher}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
         </div>
