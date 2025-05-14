@@ -73,7 +73,7 @@ export function TimetablePreview() {
           <div className="flex-1 flex flex-col">
             {/* Timetable grid */}
             <div
-              className="flex-1 grid gap-1 bg-gray-50 overflow-hidden rounded-md"
+              className="flex-1 grid gap-0.5 bg-gray-50 overflow-hidden rounded-md"
               style={{
                 gridTemplateColumns: `auto repeat(${numberOfDays}, 1fr)`,
                 gridTemplateRows: `auto ${timeSlotDurations
