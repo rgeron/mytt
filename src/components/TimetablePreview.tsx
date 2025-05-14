@@ -1,9 +1,25 @@
 "use client";
 
-import { useTimetableStore, type Subject } from "@/lib/store/timetable-store";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  useTimetableStore,
+  type Subject,
+  type TimetableEntry,
+  type TimetableSubEntry,
+  type WeekDesignation,
+} from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
-import { Trash2Icon } from "lucide-react";
-import React, { useMemo } from "react";
+import { InfoIcon, Trash2Icon } from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 export function TimetablePreview() {
   const {
@@ -15,8 +31,18 @@ export function TimetablePreview() {
     showSaturday,
     selectedActivityId,
     addEntry,
-    removeEntry,
+    removeSubEntry,
+    weekType,
+    currentWeekType,
   } = useTimetableStore();
+
+  const [conflictDialogState, setConflictDialogState] = useState<{
+    open: boolean;
+    dayIndex: number;
+    timeSlotIndex: number;
+    newSubjectId: string;
+    existingEntry?: TimetableEntry;
+  } | null>(null);
 
   // Calculate time slot durations to create proportional heights
   const timeSlotDurations = useMemo(() => {
@@ -39,9 +65,12 @@ export function TimetablePreview() {
   }
 
   // Function to find an entry for a specific day and time slot
-  const findEntry = (day: number, timeSlotIndex: number) => {
+  const findEntryForSlot = (
+    day: number,
+    timeSlotIndex: number
+  ): TimetableEntry | undefined => {
     return entries.find(
-      (entry) => entry.day === day && entry.timeSlotIndex === timeSlotIndex
+      (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
     );
   };
 
@@ -50,35 +79,90 @@ export function TimetablePreview() {
     return subjects.find((subject) => subject.id === subjectId);
   };
 
+  const getSubEntryForWeek = (
+    entry: TimetableEntry | undefined,
+    week: WeekDesignation
+  ): TimetableSubEntry | undefined => {
+    if (!entry) return undefined;
+    const weekKey = `week${week.toUpperCase()}` as keyof Pick<
+      TimetableEntry,
+      "weekA" | "weekB" | "weekC"
+    >;
+    return entry[weekKey];
+  };
+
   const handleCellClick = (dayIndex: number, timeSlotIndex: number) => {
-    if (selectedActivityId) {
-      const subjectExists = subjects.some((s) => s.id === selectedActivityId);
-      if (subjectExists) {
-        const existingEntry = findEntry(dayIndex, timeSlotIndex);
-        if (
-          !(existingEntry && existingEntry.subjectId === selectedActivityId)
-        ) {
-          addEntry({
-            day: dayIndex,
-            timeSlotIndex: timeSlotIndex,
-            subjectId: selectedActivityId,
-          });
-        }
-        // If it's the same subject, clicking the main cell won't remove it.
-        // Removal is handled by the new eraser icon.
-      } else {
-        console.warn("Selected activity ID does not exist in subjects list.");
-      }
+    if (!selectedActivityId) return;
+
+    const existingEntry = findEntryForSlot(dayIndex, timeSlotIndex);
+    const newSubject = findSubject(selectedActivityId);
+    if (!newSubject) return;
+
+    const newSubEntryData: TimetableSubEntry = {
+      subjectId: selectedActivityId,
+    }; // Room, teacher, notes can be added later
+
+    if (
+      !existingEntry ||
+      (!existingEntry.weekA && !existingEntry.weekB && !existingEntry.weekC)
+    ) {
+      // Slot is completely empty, add to weekA by default or currentWeekType if appropriate
+      addEntry(dayIndex, timeSlotIndex, "a", newSubEntryData);
+    } else if (weekType === "single") {
+      // Always replace for single week type (effectively replacing weekA)
+      if (existingEntry.weekA?.subjectId !== selectedActivityId) {
+        setConflictDialogState({
+          open: true,
+          dayIndex,
+          timeSlotIndex,
+          newSubjectId: selectedActivityId,
+          existingEntry,
+        });
+      } // If same subject, do nothing
+    } else {
+      // Multi-week scenario: Open conflict dialog
+      setConflictDialogState({
+        open: true,
+        dayIndex,
+        timeSlotIndex,
+        newSubjectId: selectedActivityId,
+        existingEntry,
+      });
     }
   };
 
-  const handleRemoveEntry = (
+  const handleConflictResolution = (action: "replace" | WeekDesignation) => {
+    if (!conflictDialogState) return;
+    const { dayIndex, timeSlotIndex, newSubjectId, existingEntry } =
+      conflictDialogState;
+    const newSubEntryData: TimetableSubEntry = { subjectId: newSubjectId };
+
+    if (action === "replace") {
+      // Remove all existing sub-entries for this slot then add the new one to week A
+      if (existingEntry?.weekA) removeSubEntry(dayIndex, timeSlotIndex, "a");
+      if (existingEntry?.weekB) removeSubEntry(dayIndex, timeSlotIndex, "b");
+      if (existingEntry?.weekC) removeSubEntry(dayIndex, timeSlotIndex, "c");
+      addEntry(dayIndex, timeSlotIndex, "a", newSubEntryData);
+    } else {
+      // Action is a WeekDesignation ('a', 'b', or 'c')
+      addEntry(dayIndex, timeSlotIndex, action, newSubEntryData);
+    }
+    setConflictDialogState(null); // Close dialog
+  };
+
+  // Eraser for the whole slot: removes all week entries
+  const handleRemoveFullEntry = (
     e: React.MouseEvent,
     dayIndex: number,
     timeSlotIndex: number
   ) => {
-    e.stopPropagation(); // Prevent cell click from firing
-    removeEntry(dayIndex, timeSlotIndex);
+    e.stopPropagation();
+    const entry = findEntryForSlot(dayIndex, timeSlotIndex);
+    if (entry) {
+      if (entry.weekA) removeSubEntry(dayIndex, timeSlotIndex, "a");
+      if (entry.weekB) removeSubEntry(dayIndex, timeSlotIndex, "b");
+      if (entry.weekC) removeSubEntry(dayIndex, timeSlotIndex, "c");
+    }
   };
 
   // Day names in French
@@ -107,6 +191,16 @@ export function TimetablePreview() {
       .join(" ");
     return `auto ${rowFractions}`;
   }, [timeSlots, timeSlotDurations, totalDayMinutes]);
+
+  const getAvailableWeeksForDialog = (): WeekDesignation[] => {
+    if (!conflictDialogState || !conflictDialogState.existingEntry) return [];
+    const { existingEntry } = conflictDialogState;
+    const available: WeekDesignation[] = [];
+    if (!existingEntry.weekA) available.push("a");
+    if (weekType !== "single" && !existingEntry.weekB) available.push("b");
+    if (weekType === "abc" && !existingEntry.weekC) available.push("c");
+    return available;
+  };
 
   return (
     <div className="relative h-full w-full flex flex-col justify-center">
@@ -181,28 +275,42 @@ export function TimetablePreview() {
 
                     {/* Entries for each day */}
                     {Array.from({ length: numberOfDays }).map((_, dayIndex) => {
-                      const entry = findEntry(dayIndex, timeIndex);
-                      const subject = entry
-                        ? findSubject(entry.subjectId)
+                      const currentFullEntry = findEntryForSlot(
+                        dayIndex,
+                        timeIndex
+                      );
+                      // For now, display subject for currentWeekType or first available if not set
+                      // Phase 3 will handle visual splitting of the cell.
+                      const subEntryToDisplay =
+                        getSubEntryForWeek(currentFullEntry, currentWeekType) ||
+                        getSubEntryForWeek(currentFullEntry, "a") ||
+                        getSubEntryForWeek(currentFullEntry, "b") ||
+                        getSubEntryForWeek(currentFullEntry, "c");
+                      const subjectToDisplay = subEntryToDisplay
+                        ? findSubject(subEntryToDisplay.subjectId)
                         : null;
+                      const hasAnyEntry =
+                        currentFullEntry?.weekA ||
+                        currentFullEntry?.weekB ||
+                        currentFullEntry?.weekC;
 
                       return (
                         <div
                           key={`cell-${dayIndex}-${timeIndex}`}
                           className={cn(
                             "relative bg-card border border-border overflow-hidden transition-colors cursor-pointer group",
-                            subject
+                            subjectToDisplay
                               ? "hover:bg-secondary/10"
                               : "hover:bg-muted/20"
                           )}
                           style={{
-                            backgroundColor: subject
-                              ? `${subject.color}20`
+                            backgroundColor: subjectToDisplay
+                              ? `${subjectToDisplay.color}20`
                               : undefined,
-                            borderLeft: subject
-                              ? `4px solid ${subject.color}`
+                            borderLeft: subjectToDisplay
+                              ? `4px solid ${subjectToDisplay.color}`
                               : selectedActivityId &&
-                                findSubject(selectedActivityId)
+                                findSubject(selectedActivityId) // Preview for placement
                               ? `4px dashed ${
                                   findSubject(selectedActivityId)?.color ||
                                   "transparent"
@@ -211,7 +319,7 @@ export function TimetablePreview() {
                           }}
                           onClick={() => handleCellClick(dayIndex, timeIndex)}
                         >
-                          {subject && (
+                          {subjectToDisplay && (
                             <>
                               <div
                                 className={cn(
@@ -220,32 +328,50 @@ export function TimetablePreview() {
                                 )}
                               >
                                 <div className="font-semibold text-xs text-foreground truncate">
-                                  {subject.name}
+                                  {subjectToDisplay.name}
                                 </div>
-                                {entry?.room && showTimeLabels && (
+                                {subEntryToDisplay?.room && showTimeLabels && (
                                   <div className="text-xs text-muted-foreground truncate mt-1">
                                     <span className="font-medium">Salle:</span>{" "}
-                                    {entry.room}
+                                    {subEntryToDisplay.room}
                                   </div>
                                 )}
-                                {entry?.teacher && showTimeLabels && (
-                                  <div className="text-xs text-muted-foreground truncate">
-                                    <span className="font-medium">Prof:</span>{" "}
-                                    {entry.teacher}
-                                  </div>
-                                )}
+                                {subEntryToDisplay?.teacher &&
+                                  showTimeLabels && (
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      <span className="font-medium">Prof:</span>{" "}
+                                      {subEntryToDisplay.teacher}
+                                    </div>
+                                  )}
                               </div>
-                              <button
-                                title="Supprimer l'entrée"
-                                onClick={(e) =>
-                                  handleRemoveEntry(e, dayIndex, timeIndex)
-                                }
-                                className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-                              >
-                                <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
-                              </button>
+                              {/* Eraser for the whole slot (all weeks) */}
+                              {hasAnyEntry && (
+                                <button
+                                  title="Supprimer toutes les entrées de ce créneau"
+                                  onClick={(e) =>
+                                    handleRemoveFullEntry(
+                                      e,
+                                      dayIndex,
+                                      timeIndex
+                                    )
+                                  }
+                                  className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
+                                >
+                                  <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
+                                </button>
+                              )}
                             </>
                           )}
+                          {/* Display number of weeks filled or some indicator if multiple (Phase 3 detail) */}
+                          {currentFullEntry &&
+                            (currentFullEntry.weekA ||
+                              currentFullEntry.weekB ||
+                              currentFullEntry.weekC) &&
+                            !subjectToDisplay && (
+                              <div className="flex items-center justify-center h-full">
+                                <InfoIcon className="h-4 w-4 text-muted-foreground/50" />
+                              </div>
+                            )}
                         </div>
                       );
                     })}
@@ -256,6 +382,81 @@ export function TimetablePreview() {
           </div>
         </div>
       </div>
+
+      {conflictDialogState?.open && (
+        <AlertDialog
+          open={conflictDialogState.open}
+          onOpenChange={(open) => !open && setConflictDialogState(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Conflit d&apos;activité</AlertDialogTitle>
+              <AlertDialogDescription>
+                Une activité est déjà planifiée pour ce créneau. Que
+                souhaitez-vous faire ?
+                {conflictDialogState.existingEntry && (
+                  <div className="mt-2 text-xs">
+                    Actuellement:
+                    {conflictDialogState.existingEntry.weekA && (
+                      <li>
+                        Sem. A:{" "}
+                        {
+                          findSubject(
+                            conflictDialogState.existingEntry.weekA.subjectId
+                          )?.name
+                        }
+                      </li>
+                    )}
+                    {conflictDialogState.existingEntry.weekB && (
+                      <li>
+                        Sem. B:{" "}
+                        {
+                          findSubject(
+                            conflictDialogState.existingEntry.weekB.subjectId
+                          )?.name
+                        }
+                      </li>
+                    )}
+                    {conflictDialogState.existingEntry.weekC && (
+                      <li>
+                        Sem. C:{" "}
+                        {
+                          findSubject(
+                            conflictDialogState.existingEntry.weekC.subjectId
+                          )?.name
+                        }
+                      </li>
+                    )}
+                  </div>
+                )}
+                Nouveau: {findSubject(conflictDialogState.newSubjectId)?.name}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 items-center">
+              <AlertDialogCancel onClick={() => setConflictDialogState(null)}>
+                Annuler
+              </AlertDialogCancel>
+              <Button
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={() => handleConflictResolution("replace")}
+              >
+                Remplacer Tout
+              </Button>
+              {getAvailableWeeksForDialog().map((week) => (
+                <Button
+                  key={week}
+                  className="w-full sm:w-auto"
+                  variant="outline"
+                  onClick={() => handleConflictResolution(week)}
+                >
+                  Ajouter en Semaine {week.toUpperCase()}
+                </Button>
+              ))}
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

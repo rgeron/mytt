@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type SubjectType = "school" | "extracurricular" | "break";
+export type WeekDesignation = "a" | "b" | "c"; // For clarity
 
 export type TimeSlot = {
   start: string;
@@ -20,13 +21,21 @@ export type Subject = {
   teacherOrCoach?: string;
 };
 
-export type TimetableEntry = {
-  day: number; // 0 = Monday, 1 = Tuesday, etc.
-  timeSlotIndex: number;
+// New type for a sub-entry within a week
+export type TimetableSubEntry = {
   subjectId: string;
   room?: string;
   teacher?: string;
   notes?: string;
+};
+
+// Updated TimetableEntry type
+export type TimetableEntry = {
+  day: number; // 0 = Monday, 1 = Tuesday, etc.
+  timeSlotIndex: number;
+  weekA?: TimetableSubEntry;
+  weekB?: TimetableSubEntry;
+  weekC?: TimetableSubEntry;
 };
 
 export type TimetableState = {
@@ -34,9 +43,9 @@ export type TimetableState = {
   subtitle: string;
   timeSlots: TimeSlot[];
   subjects: Subject[];
-  entries: TimetableEntry[];
+  entries: TimetableEntry[]; // Uses updated TimetableEntry
   weekType: "single" | "ab" | "abc";
-  currentWeekType: "a" | "b" | "c";
+  currentWeekType: WeekDesignation;
   showSaturday: boolean;
   selectedActivityId: string | null;
 
@@ -48,15 +57,27 @@ export type TimetableState = {
   addSubject: (subject: Omit<Subject, "id">) => void;
   removeSubject: (id: string) => void;
   updateSubject: (id: string, subject: Partial<Omit<Subject, "id">>) => void;
-  addEntry: (entry: TimetableEntry) => void;
-  removeEntry: (day: number, timeSlotIndex: number) => void;
-  updateEntry: (
+  // Modified addEntry and removeEntry (now removeSubEntry)
+  addEntry: (
     day: number,
     timeSlotIndex: number,
-    entry: Partial<TimetableEntry>
+    week: WeekDesignation,
+    subEntry: TimetableSubEntry
+  ) => void;
+  removeSubEntry: (
+    day: number,
+    timeSlotIndex: number,
+    week: WeekDesignation
+  ) => void;
+  updateSubEntry: (
+    // Renamed from updateEntry for clarity
+    day: number,
+    timeSlotIndex: number,
+    week: WeekDesignation,
+    subEntryUpdates: Partial<TimetableSubEntry>
   ) => void;
   setWeekType: (type: "single" | "ab" | "abc") => void;
-  setCurrentWeekType: (type: "a" | "b" | "c") => void;
+  setCurrentWeekType: (type: WeekDesignation) => void;
   setShowSaturday: (show: boolean) => void;
   setSelectedActivityId: (id: string | null) => void;
   reset: () => void;
@@ -274,9 +295,9 @@ const initialState = {
   subtitle: "Année scolaire 2023-2024",
   timeSlots: defaultTimeSlots,
   subjects: defaultSubjects,
-  entries: [],
+  entries: [], // Initial entries are empty, will conform to new TimetableEntry structure
   weekType: "single" as const,
-  currentWeekType: "a" as const,
+  currentWeekType: "a" as WeekDesignation,
   showSaturday: false,
   selectedActivityId: null,
 };
@@ -288,27 +309,20 @@ export const useTimetableStore = create<TimetableState>()(
 
       setTitle: (title) => set({ title }),
       setSubtitle: (subtitle) => set({ subtitle }),
-
       addTimeSlot: (timeSlot) =>
-        set((state) => ({
-          timeSlots: [...state.timeSlots, timeSlot],
-        })),
-
+        set((state) => ({ timeSlots: [...state.timeSlots, timeSlot] })),
       removeTimeSlot: (index) =>
         set((state) => ({
           timeSlots: state.timeSlots.filter((_, i) => i !== index),
         })),
-
       addSubject: (subjectData) =>
         set((state) => ({
           subjects: [...state.subjects, { ...subjectData, id: uuidv4() }],
         })),
-
       removeSubject: (id) =>
         set((state) => ({
           subjects: state.subjects.filter((subject) => subject.id !== id),
         })),
-
       updateSubject: (id, updates) =>
         set((state) => ({
           subjects: state.subjects.map((subject) =>
@@ -316,34 +330,94 @@ export const useTimetableStore = create<TimetableState>()(
           ),
         })),
 
-      addEntry: (entry) =>
-        set((state) => ({
-          entries: [...state.entries, entry],
-        })),
+      addEntry: (day, timeSlotIndex, week, subEntry) =>
+        set((state) => {
+          const entryIndex = state.entries.findIndex(
+            (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
+          );
+          const weekKey = `week${week.toUpperCase()}` as keyof Pick<
+            TimetableEntry,
+            "weekA" | "weekB" | "weekC"
+          >;
 
-      removeEntry: (day, timeSlotIndex) =>
-        set((state) => ({
-          entries: state.entries.filter(
-            (entry) =>
-              !(entry.day === day && entry.timeSlotIndex === timeSlotIndex)
-          ),
-        })),
+          if (entryIndex > -1) {
+            // Entry for this slot exists, update it
+            const updatedEntries = [...state.entries];
+            updatedEntries[entryIndex] = {
+              ...updatedEntries[entryIndex],
+              [weekKey]: subEntry,
+            };
+            return { entries: updatedEntries };
+          } else {
+            // No entry for this slot, create a new one
+            const newEntry: TimetableEntry = {
+              day,
+              timeSlotIndex,
+              [weekKey]: subEntry,
+            };
+            return { entries: [...state.entries, newEntry] };
+          }
+        }),
 
-      updateEntry: (day, timeSlotIndex, updates) =>
-        set((state) => ({
-          entries: state.entries.map((entry) =>
-            entry.day === day && entry.timeSlotIndex === timeSlotIndex
-              ? { ...entry, ...updates }
-              : entry
-          ),
-        })),
+      removeSubEntry: (day, timeSlotIndex, week) =>
+        set((state) => {
+          const entryIndex = state.entries.findIndex(
+            (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
+          );
+          if (entryIndex === -1) return {}; // No entry found
+
+          const updatedEntries = [...state.entries];
+          const entryToUpdate = { ...updatedEntries[entryIndex] };
+          const weekKey = `week${week.toUpperCase()}` as keyof Pick<
+            TimetableEntry,
+            "weekA" | "weekB" | "weekC"
+          >;
+
+          delete entryToUpdate[weekKey]; // Remove the specific week's sub-entry
+
+          // If all week sub-entries are gone, remove the entire entry
+          if (
+            !entryToUpdate.weekA &&
+            !entryToUpdate.weekB &&
+            !entryToUpdate.weekC
+          ) {
+            updatedEntries.splice(entryIndex, 1);
+          } else {
+            updatedEntries[entryIndex] = entryToUpdate;
+          }
+          return { entries: updatedEntries };
+        }),
+
+      updateSubEntry: (day, timeSlotIndex, week, subEntryUpdates) =>
+        set((state) => {
+          const entryIndex = state.entries.findIndex(
+            (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
+          );
+          if (entryIndex === -1) return {}; // No entry found
+
+          const updatedEntries = [...state.entries];
+          const entryToUpdate = { ...updatedEntries[entryIndex] };
+          const weekKey = `week${week.toUpperCase()}` as keyof Pick<
+            TimetableEntry,
+            "weekA" | "weekB" | "weekC"
+          >;
+
+          if (entryToUpdate[weekKey]) {
+            entryToUpdate[weekKey] = {
+              ...entryToUpdate[weekKey],
+              ...subEntryUpdates,
+            };
+            updatedEntries[entryIndex] = entryToUpdate;
+            return { entries: updatedEntries };
+          }
+          return {}; // Sub-entry for the week doesn't exist, do nothing (or could create it)
+        }),
 
       setWeekType: (weekType) => set({ weekType }),
       setCurrentWeekType: (currentWeekType) => set({ currentWeekType }),
       setShowSaturday: (showSaturday) => set({ showSaturday }),
       setSelectedActivityId: (id) => set({ selectedActivityId: id }),
-
-      reset: () => set(initialState),
+      reset: () => set({ ...initialState, entries: [] }), // Ensure entries are reset correctly
     }),
     {
       name: "timetable-storage",

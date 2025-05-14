@@ -50,21 +50,38 @@ export const SubjectSchema = z.object({
   teacherOrCoach: z.string().optional(),
 });
 
-export const TimetableEntrySchema = z.object({
-  day: z.number().min(0).max(6),
-  timeSlotIndex: z.number().min(0),
-  subjectId: z.string().min(1),
+// New schema for a sub-entry within a week
+export const TimetableSubEntrySchema = z.object({
+  subjectId: z.string().min(1, "ID de matière requis pour le sous-créneau"),
   room: z.string().optional(),
   teacher: z.string().optional(),
   notes: z.string().optional(),
 });
+
+export const TimetableEntrySchema = z
+  .object({
+    day: z.number().min(0).max(6, "Jour invalide"), // 0-5 for Mon-Sat, or 0-6 if Sunday included
+    timeSlotIndex: z.number().min(0, "Index de créneau horaire invalide"),
+    weekA: TimetableSubEntrySchema.optional(),
+    weekB: TimetableSubEntrySchema.optional(),
+    weekC: TimetableSubEntrySchema.optional(),
+  })
+  .refine((data) => data.weekA || data.weekB || data.weekC, {
+    message: "Au moins un créneau hebdomadaire (A, B, ou C) doit être défini",
+    // This path might need adjustment if it doesn't point to a specific field for UI errors.
+    // Consider not having this refinement if an empty entry (no weeks filled) is permissible before interaction.
+  });
 
 export const TimetableConfigSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   subtitle: z.string().optional(),
   timeSlots: z.array(TimeSlotSchema),
   subjects: z.array(SubjectSchema),
-  entries: z.array(TimetableEntrySchema),
-  weekType: z.enum(["single", "ab", "abc"]),
-  currentWeekType: z.enum(["a", "b", "c"]),
+  entries: z.array(TimetableEntrySchema), // Updated to use the new TimetableEntrySchema
+  weekType: z.enum(["single", "ab", "abc"], {
+    required_error: "Le type de semaine est requis",
+  }),
+  currentWeekType: z.enum(["a", "b", "c"], {
+    required_error: "Le type de semaine actuel est requis",
+  }),
 });
