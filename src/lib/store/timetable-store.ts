@@ -1,18 +1,26 @@
+import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type TimeSlot = {
+export type SubjectType = "school" | "extracurricular" | "break";
+
+export type TimeSlot = {
   start: string;
   end: string;
 };
 
-type Subject = {
+export type Subject = {
   id: string;
   name: string;
   color: string;
+  subjectType: SubjectType;
+  icon?: string;
+  abbreviation?: string;
+  image?: string;
+  teacherOrCoach?: string;
 };
 
-type TimetableEntry = {
+export type TimetableEntry = {
   day: number; // 0 = Monday, 1 = Tuesday, etc.
   timeSlotIndex: number;
   subjectId: string;
@@ -21,7 +29,7 @@ type TimetableEntry = {
   notes?: string;
 };
 
-type TimetableState = {
+export type TimetableState = {
   title: string;
   subtitle: string;
   timeSlots: TimeSlot[];
@@ -30,15 +38,16 @@ type TimetableState = {
   weekType: "single" | "ab" | "abc";
   currentWeekType: "a" | "b" | "c";
   showSaturday: boolean;
+  selectedActivityId: string | null;
 
   // Actions
   setTitle: (title: string) => void;
   setSubtitle: (subtitle: string) => void;
   addTimeSlot: (timeSlot: TimeSlot) => void;
   removeTimeSlot: (index: number) => void;
-  addSubject: (subject: Subject) => void;
+  addSubject: (subject: Omit<Subject, "id">) => void;
   removeSubject: (id: string) => void;
-  updateSubject: (id: string, subject: Partial<Subject>) => void;
+  updateSubject: (id: string, subject: Partial<Omit<Subject, "id">>) => void;
   addEntry: (entry: TimetableEntry) => void;
   removeEntry: (day: number, timeSlotIndex: number) => void;
   updateEntry: (
@@ -49,6 +58,7 @@ type TimetableState = {
   setWeekType: (type: "single" | "ab" | "abc") => void;
   setCurrentWeekType: (type: "a" | "b" | "c") => void;
   setShowSaturday: (show: boolean) => void;
+  setSelectedActivityId: (id: string | null) => void;
   reset: () => void;
 };
 
@@ -65,15 +75,210 @@ const defaultTimeSlots: TimeSlot[] = [
   { start: "17:00", end: "18:00" },
 ];
 
+const defaultSubjects: Subject[] = [
+  // School Subjects (at least 10)
+  {
+    id: uuidv4(),
+    name: "Mathématiques",
+    color: "#FF5733",
+    subjectType: "school",
+    abbreviation: "Maths",
+  },
+  {
+    id: uuidv4(),
+    name: "Français",
+    color: "#33CFFF",
+    subjectType: "school",
+    abbreviation: "Fra",
+  },
+  {
+    id: uuidv4(),
+    name: "Histoire-Géographie",
+    color: "#FFC300",
+    subjectType: "school",
+    abbreviation: "H-G",
+  },
+  {
+    id: uuidv4(),
+    name: "Physique-Chimie",
+    color: "#DAF7A6",
+    subjectType: "school",
+    abbreviation: "P-C",
+  },
+  {
+    id: uuidv4(),
+    name: "SVT",
+    color: "#4CAF50",
+    subjectType: "school",
+    abbreviation: "SVT",
+  },
+  {
+    id: uuidv4(),
+    name: "Anglais",
+    color: "#FFC0CB",
+    subjectType: "school",
+    abbreviation: "Ang",
+  },
+  {
+    id: uuidv4(),
+    name: "Espagnol",
+    color: "#F4A460",
+    subjectType: "school",
+    abbreviation: "Esp",
+  },
+  {
+    id: uuidv4(),
+    name: "Allemand",
+    color: "#A9A9A9",
+    subjectType: "school",
+    abbreviation: "All",
+  },
+  {
+    id: uuidv4(),
+    name: "Philosophie",
+    color: "#DDA0DD",
+    subjectType: "school",
+    abbreviation: "Philo",
+  },
+  {
+    id: uuidv4(),
+    name: "EPS",
+    color: "#20B2AA",
+    subjectType: "school",
+    abbreviation: "EPS",
+    icon: "🤸",
+  },
+  {
+    id: uuidv4(),
+    name: "Musique (Cours)",
+    color: "#FF69B4",
+    subjectType: "school",
+    abbreviation: "Zik",
+    icon: "🎼",
+  },
+  {
+    id: uuidv4(),
+    name: "Arts Plastiques",
+    color: "#FFA07A",
+    subjectType: "school",
+    abbreviation: "ArtP",
+    icon: "🎨",
+  },
+
+  // Extracurricular Activities (at least 10)
+  {
+    id: uuidv4(),
+    name: "Football",
+    color: "#008000",
+    subjectType: "extracurricular",
+    icon: "⚽",
+  },
+  {
+    id: uuidv4(),
+    name: "Danse",
+    color: "#8A2BE2",
+    subjectType: "extracurricular",
+    icon: "💃",
+  },
+  {
+    id: uuidv4(),
+    name: "Piano",
+    color: "#000000",
+    subjectType: "extracurricular",
+    icon: "🎹",
+    teacherOrCoach: "Mme. Notes",
+  },
+  {
+    id: uuidv4(),
+    name: "Guitare",
+    color: "#8B4513",
+    subjectType: "extracurricular",
+    icon: "🎸",
+  },
+  {
+    id: uuidv4(),
+    name: "Théâtre",
+    color: "#FF4500",
+    subjectType: "extracurricular",
+    icon: "🎭",
+  },
+  {
+    id: uuidv4(),
+    name: "Judo",
+    color: "#DC143C",
+    subjectType: "extracurricular",
+    icon: "🥋",
+  },
+  {
+    id: uuidv4(),
+    name: "Natation",
+    color: "#00FFFF",
+    subjectType: "extracurricular",
+    icon: "🏊",
+  },
+  {
+    id: uuidv4(),
+    name: "Scoutisme",
+    color: "#228B22",
+    subjectType: "extracurricular",
+    icon: "🏕️",
+  },
+  {
+    id: uuidv4(),
+    name: "Club de Lecture",
+    color: "#DEB887",
+    subjectType: "extracurricular",
+    icon: "📚",
+  },
+  {
+    id: uuidv4(),
+    name: "Échecs",
+    color: "#556B2F",
+    subjectType: "extracurricular",
+    icon: "♟️",
+  },
+  {
+    id: uuidv4(),
+    name: "Bénévolat",
+    color: "#FF8C00",
+    subjectType: "extracurricular",
+    icon: "🤝",
+  },
+
+  // Breaks
+  {
+    id: uuidv4(),
+    name: "Pause Déjeuner",
+    color: "#D3D3D3",
+    subjectType: "break",
+    icon: "🥪",
+  },
+  {
+    id: uuidv4(),
+    name: "Récréation",
+    color: "#A9A9A9",
+    subjectType: "break",
+    icon: "🤸‍♂️",
+  }, // Changed icon slightly for variety
+  {
+    id: uuidv4(),
+    name: "Pause",
+    color: "#E6E6FA",
+    subjectType: "break",
+    icon: "☕",
+  },
+];
+
 const initialState = {
   title: "Mon Emploi du Temps",
   subtitle: "Année scolaire 2023-2024",
   timeSlots: defaultTimeSlots,
-  subjects: [],
+  subjects: defaultSubjects,
   entries: [],
   weekType: "single" as const,
   currentWeekType: "a" as const,
   showSaturday: false,
+  selectedActivityId: null,
 };
 
 export const useTimetableStore = create<TimetableState>()(
@@ -94,9 +299,9 @@ export const useTimetableStore = create<TimetableState>()(
           timeSlots: state.timeSlots.filter((_, i) => i !== index),
         })),
 
-      addSubject: (subject) =>
+      addSubject: (subjectData) =>
         set((state) => ({
-          subjects: [...state.subjects, subject],
+          subjects: [...state.subjects, { ...subjectData, id: uuidv4() }],
         })),
 
       removeSubject: (id) =>
@@ -136,11 +341,12 @@ export const useTimetableStore = create<TimetableState>()(
       setWeekType: (weekType) => set({ weekType }),
       setCurrentWeekType: (currentWeekType) => set({ currentWeekType }),
       setShowSaturday: (showSaturday) => set({ showSaturday }),
+      setSelectedActivityId: (id) => set({ selectedActivityId: id }),
 
       reset: () => set(initialState),
     }),
     {
-      name: "timetable-storage", // Name for localStorage key
+      name: "timetable-storage",
     }
   )
 );

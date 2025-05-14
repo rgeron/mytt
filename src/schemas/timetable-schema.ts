@@ -41,6 +41,13 @@ export const SubjectSchema = z.object({
   color: z
     .string()
     .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Format de couleur invalide"),
+  subjectType: z.enum(["school", "extracurricular", "break"], {
+    required_error: "Le type d'activité est requis",
+  }),
+  icon: z.string().optional(),
+  abbreviation: z.string().optional(),
+  image: z.string().url({ message: "URL d'image invalide" }).optional(),
+  teacherOrCoach: z.string().optional(),
 });
 
 export const TimetableEntrySchema = z.object({

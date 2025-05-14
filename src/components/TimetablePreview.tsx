@@ -1,12 +1,22 @@
 "use client";
 
-import { useTimetableStore } from "@/lib/store/timetable-store";
+import { useTimetableStore, type Subject } from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
+import { Trash2Icon } from "lucide-react";
 import React, { useMemo } from "react";
 
 export function TimetablePreview() {
-  const { title, subtitle, timeSlots, subjects, entries, showSaturday } =
-    useTimetableStore();
+  const {
+    title,
+    subtitle,
+    timeSlots,
+    subjects,
+    entries,
+    showSaturday,
+    selectedActivityId,
+    addEntry,
+    removeEntry,
+  } = useTimetableStore();
 
   // Calculate time slot durations to create proportional heights
   const timeSlotDurations = useMemo(() => {
@@ -36,8 +46,39 @@ export function TimetablePreview() {
   };
 
   // Function to find a subject by ID
-  const findSubject = (subjectId: string) => {
+  const findSubject = (subjectId: string): Subject | undefined => {
     return subjects.find((subject) => subject.id === subjectId);
+  };
+
+  const handleCellClick = (dayIndex: number, timeSlotIndex: number) => {
+    if (selectedActivityId) {
+      const subjectExists = subjects.some((s) => s.id === selectedActivityId);
+      if (subjectExists) {
+        const existingEntry = findEntry(dayIndex, timeSlotIndex);
+        if (
+          !(existingEntry && existingEntry.subjectId === selectedActivityId)
+        ) {
+          addEntry({
+            day: dayIndex,
+            timeSlotIndex: timeSlotIndex,
+            subjectId: selectedActivityId,
+          });
+        }
+        // If it's the same subject, clicking the main cell won't remove it.
+        // Removal is handled by the new eraser icon.
+      } else {
+        console.warn("Selected activity ID does not exist in subjects list.");
+      }
+    }
+  };
+
+  const handleRemoveEntry = (
+    e: React.MouseEvent,
+    dayIndex: number,
+    timeSlotIndex: number
+  ) => {
+    e.stopPropagation(); // Prevent cell click from firing
+    removeEntry(dayIndex, timeSlotIndex);
   };
 
   // Day names in French
@@ -149,41 +190,61 @@ export function TimetablePreview() {
                         <div
                           key={`cell-${dayIndex}-${timeIndex}`}
                           className={cn(
-                            "bg-card border border-border overflow-hidden transition-colors",
-                            subject ? "hover:bg-secondary/10" : ""
+                            "relative bg-card border border-border overflow-hidden transition-colors cursor-pointer group",
+                            subject
+                              ? "hover:bg-secondary/10"
+                              : "hover:bg-muted/20"
                           )}
                           style={{
                             backgroundColor: subject
-                              ? `${subject.color}15`
+                              ? `${subject.color}20`
                               : undefined,
                             borderLeft: subject
                               ? `4px solid ${subject.color}`
+                              : selectedActivityId &&
+                                findSubject(selectedActivityId)
+                              ? `4px dashed ${
+                                  findSubject(selectedActivityId)?.color ||
+                                  "transparent"
+                                }`
                               : undefined,
                           }}
+                          onClick={() => handleCellClick(dayIndex, timeIndex)}
                         >
                           {subject && (
-                            <div
-                              className={cn(
-                                "flex flex-col h-full justify-center",
-                                showTimeLabels ? "p-2" : "p-0"
-                              )}
-                            >
-                              <div className="font-semibold text-xs text-foreground truncate">
-                                {subject.name}
+                            <>
+                              <div
+                                className={cn(
+                                  "flex flex-col h-full justify-center",
+                                  showTimeLabels ? "p-2" : "p-0"
+                                )}
+                              >
+                                <div className="font-semibold text-xs text-foreground truncate">
+                                  {subject.name}
+                                </div>
+                                {entry?.room && showTimeLabels && (
+                                  <div className="text-xs text-muted-foreground truncate mt-1">
+                                    <span className="font-medium">Salle:</span>{" "}
+                                    {entry.room}
+                                  </div>
+                                )}
+                                {entry?.teacher && showTimeLabels && (
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    <span className="font-medium">Prof:</span>{" "}
+                                    {entry.teacher}
+                                  </div>
+                                )}
                               </div>
-                              {entry?.room && showTimeLabels && (
-                                <div className="text-xs text-muted-foreground truncate mt-1">
-                                  <span className="font-medium">Salle:</span>{" "}
-                                  {entry.room}
-                                </div>
-                              )}
-                              {entry?.teacher && showTimeLabels && (
-                                <div className="text-xs text-muted-foreground truncate">
-                                  <span className="font-medium">Prof:</span>{" "}
-                                  {entry.teacher}
-                                </div>
-                              )}
-                            </div>
+                              <button
+                                title="Supprimer l'entrée"
+                                onClick={(e) =>
+                                  handleRemoveEntry(e, dayIndex, timeIndex)
+                                }
+                                className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                              >
+                                <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
+                              </button>
+                            </>
                           )}
                         </div>
                       );
