@@ -17,6 +17,7 @@ type TimelineSlotProps = {
   onDelete: (id: number) => void;
   onAddMiddlePoint?: (id: number) => void;
   isFirst: boolean;
+  isLast?: boolean;
   compact?: boolean;
   showAddButton?: boolean;
 };
@@ -64,6 +65,7 @@ export function TimelineSlot({
   onDelete,
   onAddMiddlePoint,
   isFirst,
+  isLast = false,
   compact = false,
   showAddButton = true,
 }: TimelineSlotProps) {
@@ -140,7 +142,9 @@ export function TimelineSlot({
         title={
           isFirst
             ? "Début de journée"
-            : `Point entre créneau ${slot.id - 1} et ${slot.id}`
+            : isLast
+            ? "Fin de journée"
+            : "Point intermédiaire"
         }
       >
         {/* Timeline dot with pulse effect */}
@@ -221,11 +225,11 @@ export function TimelineSlot({
             <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
               Début de journée
             </span>
-          ) : (
-            <span className="px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-medium">
-              Créneau {slot.id}
+          ) : isLast ? (
+            <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+              Fin de journée
             </span>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
