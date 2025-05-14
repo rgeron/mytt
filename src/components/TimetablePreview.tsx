@@ -127,12 +127,13 @@ export function TimetablePreview() {
                     {/* Time slot label */}
                     <div
                       key={`time-${timeIndex}`}
-                      className="bg-secondary/30 text-center text-xs flex flex-col items-center justify-center font-medium"
+                      className="bg-secondary/30 text-center text-[10px] flex flex-col items-center justify-center font-medium"
                     >
                       {showTimeLabels && (
-                        <div className="p-2">
-                          <span>{timeSlot.start}</span>
-                          <span>{timeSlot.end}</span>
+                        <div>
+                          <div>
+                            {timeSlot.start} - {timeSlot.end}
+                          </div>
                         </div>
                       )}
                     </div>
