@@ -63,8 +63,8 @@ export function TimetablePreview() {
         }}
       >
         {/* Timetable content */}
-        <div className="h-full w-full p-6 flex flex-col">
-          <div className="text-center mb-4">
+        <div className="h-full w-full p-2 flex flex-col">
+          <div className="text-center mb-2">
             <h1 className="text-2xl font-bold text-primary">{title}</h1>
             <p className="text-muted-foreground text-sm">{subtitle}</p>
           </div>
