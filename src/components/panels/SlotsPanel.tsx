@@ -464,7 +464,7 @@ export function SlotsPanel() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="imagePosition">Position de l'image</Label>
+          <Label htmlFor="imagePosition">Position de l&apos;image</Label>
           <RadioGroup
             value={formState.imagePosition || "background"}
             onValueChange={(value) =>
