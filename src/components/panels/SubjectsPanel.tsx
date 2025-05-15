@@ -19,7 +19,7 @@ import {
   SearchIcon,
   XIcon,
 } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Helper to generate a random light hex color
 function getRandomLightColor(): string {
@@ -54,8 +54,9 @@ function ActivitySearchPopover({
 
   const [searchTerm, setSearchTerm] = useState("");
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newActivityName, setNewActivityName] = useState("");
+  const [pendingSelectionName, setPendingSelectionName] = useState<
+    string | null
+  >(null);
 
   const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -92,31 +93,39 @@ function ActivitySearchPopover({
     setSelectedActivityId(subjectId);
     setSearchTerm(subject ? subject.name : "");
     setIsPopoverOpen(false);
-    setShowAddForm(false);
   };
 
-  const handleOpenAddForm = () => {
-    setNewActivityName(searchTerm);
-    setShowAddForm(true);
-  };
-
-  const handleAddNewActivity = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newActivityName.trim()) {
+  const handleDirectAddAndSelect = () => {
+    if (searchTerm.trim()) {
       const newActivityData: Omit<SubjectFromStore, "id"> = {
-        name: newActivityName,
+        name: searchTerm,
         subjectType: subjectType,
-        color: getRandomLightColor(), // Assign random color
-        // icon, abbreviation, teacherOrCoach can be added later or via a more detailed edit
+        color: getRandomLightColor(),
       };
       addSubject(newActivityData);
-      // setSelectedActivityId(newlyAddedId); // Needs store to return ID or a robust way to find it
-      setSearchTerm(newActivityName); // Keep name in search
-      setNewActivityName("");
-      setShowAddForm(false);
+      setPendingSelectionName(searchTerm);
       setIsPopoverOpen(false);
     }
   };
+
+  useEffect(() => {
+    if (pendingSelectionName && subjects.length > 0) {
+      const newlyAddedSubject = subjects.find(
+        (s) => s.name === pendingSelectionName && s.subjectType === subjectType
+      );
+      if (newlyAddedSubject) {
+        setSelectedActivityId(newlyAddedSubject.id);
+        setSearchTerm(newlyAddedSubject.name);
+        setPendingSelectionName(null);
+      }
+    }
+  }, [
+    subjects,
+    pendingSelectionName,
+    subjectType,
+    setSelectedActivityId,
+    setSearchTerm,
+  ]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -127,7 +136,6 @@ function ActivitySearchPopover({
         !triggerRef.current.contains(event.target as Node)
       ) {
         setIsPopoverOpen(false);
-        setShowAddForm(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -156,7 +164,6 @@ function ActivitySearchPopover({
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setIsPopoverOpen(true);
-                setShowAddForm(false);
               }}
               onFocus={() => setIsPopoverOpen(true)}
               className="pl-8 w-full text-sm h-9"
@@ -182,98 +189,65 @@ function ActivitySearchPopover({
           align="start"
           sideOffset={5}
         >
-          {showAddForm ? (
-            <form
-              onSubmit={handleAddNewActivity}
-              className="flex flex-col gap-2 p-1"
-            >
-              <p className="text-sm font-medium">
-                Ajouter &quot;{newActivityName}&quot; (
-                {subjectTypeLabels[subjectType]})
-              </p>
-              <Input
-                value={newActivityName} // Name is controlled by newActivityName state
-                onChange={(e) => setNewActivityName(e.target.value)} // Allow editing if needed
-                placeholder="Nom"
-                required
-                className="text-sm h-8"
-              />
-              {/* Color is random, type is fixed by component instance */}
-              <Button type="submit" size="sm" className="mt-1 text-xs">
-                <PlusCircleIcon className="mr-1.5 h-3.5 w-3.5" /> Confirmer et
-                Sélectionner
-              </Button>
+          <>
+            {filteredSubjects.map((subject) => (
               <Button
-                type="button"
+                key={subject.id}
                 variant="ghost"
-                size="sm"
-                onClick={() => setShowAddForm(false)}
-                className="text-xs"
+                className={cn(
+                  "w-full justify-start h-auto p-1.5 text-sm font-normal flex items-center gap-2",
+                  selectedActivityId === subject.id &&
+                    "bg-primary/10 text-primary"
+                )}
+                onClick={() => handleSelectActivity(subject.id)}
               >
-                Annuler
+                <span
+                  style={{ backgroundColor: subject.color }}
+                  className="h-3 w-3 rounded-full shrink-0 border border-background/30"
+                ></span>
+                <span className="flex-1 truncate">{subject.name}</span>
+                {subject.icon && (
+                  <span className="text-xs opacity-70">{subject.icon}</span>
+                )}
+                {selectedActivityId === subject.id && (
+                  <CheckCircleIcon className="h-4 w-4 text-primary shrink-0" />
+                )}
               </Button>
-            </form>
-          ) : (
-            <>
-              {filteredSubjects.map((subject) => (
-                <Button
-                  key={subject.id}
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start h-auto p-1.5 text-sm font-normal flex items-center gap-2",
-                    selectedActivityId === subject.id &&
-                      "bg-primary/10 text-primary"
-                  )}
-                  onClick={() => handleSelectActivity(subject.id)}
-                >
-                  <span
-                    style={{ backgroundColor: subject.color }}
-                    className="h-3 w-3 rounded-full shrink-0 border border-background/30"
-                  ></span>
-                  <span className="flex-1 truncate">{subject.name}</span>
-                  {subject.icon && (
-                    <span className="text-xs opacity-70">{subject.icon}</span>
-                  )}
-                  {selectedActivityId === subject.id && (
-                    <CheckCircleIcon className="h-4 w-4 text-primary shrink-0" />
-                  )}
-                </Button>
-              ))}
+            ))}
 
-              {!exactMatch && searchTerm.trim() && (
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start h-auto p-1.5 text-sm font-normal flex items-center gap-2 mt-1 border-t border-dashed"
-                  onClick={handleOpenAddForm}
-                >
-                  <PlusCircleIcon className="mr-1.5 h-4 w-4 text-muted-foreground" />
-                  Ajouter &quot;{searchTerm}&quot;...
-                </Button>
+            {!exactMatch && searchTerm.trim() && (
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-auto p-1.5 text-sm font-normal flex items-center gap-2 mt-1 border-t border-dashed"
+                onClick={handleDirectAddAndSelect}
+              >
+                <PlusCircleIcon className="mr-1.5 h-4 w-4 text-muted-foreground" />
+                Ajouter &quot;{searchTerm}&quot;...
+              </Button>
+            )}
+
+            {filteredSubjects.length === 0 &&
+              !searchTerm.trim() &&
+              subjectsOfType.length > 0 && (
+                <p className="text-xs text-muted-foreground text-center p-2">
+                  Rechercher dans {label.toLowerCase()}.
+                </p>
               )}
-
-              {filteredSubjects.length === 0 &&
-                !searchTerm.trim() &&
-                subjectsOfType.length > 0 && (
-                  <p className="text-xs text-muted-foreground text-center p-2">
-                    Rechercher dans {label.toLowerCase()}.
-                  </p>
-                )}
-              {filteredSubjects.length === 0 &&
-                !searchTerm.trim() &&
-                subjectsOfType.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center p-2">
-                    Aucune {label.toLowerCase()} définie. Ajoutez-en une.
-                  </p>
-                )}
-              {filteredSubjects.length === 0 &&
-                searchTerm.trim() &&
-                !exactMatch && (
-                  <p className="text-xs text-muted-foreground text-center p-2">
-                    Aucun résultat. Créez &quot;{searchTerm}&quot;?
-                  </p>
-                )}
-            </>
-          )}
+            {filteredSubjects.length === 0 &&
+              !searchTerm.trim() &&
+              subjectsOfType.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center p-2">
+                  Aucune {label.toLowerCase()} définie. Ajoutez-en une.
+                </p>
+              )}
+            {filteredSubjects.length === 0 &&
+              searchTerm.trim() &&
+              !exactMatch && (
+                <p className="text-xs text-muted-foreground text-center p-2">
+                  Aucun résultat. Créez &quot;{searchTerm}&quot;?
+                </p>
+              )}
+          </>
         </PopoverContent>
       </Popover>
     </div>
