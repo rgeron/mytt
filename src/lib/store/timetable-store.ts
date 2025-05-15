@@ -27,6 +27,10 @@ export type TimetableSubEntry = {
   room?: string;
   teacher?: string;
   notes?: string;
+  overrideColor?: string;
+  overrideIcon?: string;
+  overrideAbbreviation?: string;
+  overrideImage?: string;
 };
 
 // Updated TimetableEntry type
@@ -36,6 +40,13 @@ export type TimetableEntry = {
   weekA?: TimetableSubEntry;
   weekB?: TimetableSubEntry;
   weekC?: TimetableSubEntry;
+};
+
+export type SelectedSlotInfo = {
+  day: number;
+  timeSlotIndex: number;
+  // Note: weekDesignation and subjectId might be needed later for more precise targeting
+  // For now, the panel will derive context using currentWeekType
 };
 
 export type TimetableState = {
@@ -48,6 +59,7 @@ export type TimetableState = {
   currentWeekType: WeekDesignation;
   showSaturday: boolean;
   selectedActivityId: string | null;
+  selectedSlotForPanel: SelectedSlotInfo | null; // Added for the slots panel
 
   // Actions
   setTitle: (title: string) => void;
@@ -57,7 +69,6 @@ export type TimetableState = {
   addSubject: (subject: Omit<Subject, "id">) => void;
   removeSubject: (id: string) => void;
   updateSubject: (id: string, subject: Partial<Omit<Subject, "id">>) => void;
-  // Modified addEntry and removeEntry (now removeSubEntry)
   addEntry: (
     day: number,
     timeSlotIndex: number,
@@ -70,7 +81,6 @@ export type TimetableState = {
     week: WeekDesignation
   ) => void;
   updateSubEntry: (
-    // Renamed from updateEntry for clarity
     day: number,
     timeSlotIndex: number,
     week: WeekDesignation,
@@ -80,6 +90,7 @@ export type TimetableState = {
   setCurrentWeekType: (type: WeekDesignation) => void;
   setShowSaturday: (show: boolean) => void;
   setSelectedActivityId: (id: string | null) => void;
+  setSelectedSlotForPanel: (slotInfo: SelectedSlotInfo | null) => void; // Added setter
   reset: () => void;
 };
 
@@ -110,21 +121,21 @@ const defaultSubjects: Subject[] = [
     name: "Français",
     color: "#33CFFF",
     subjectType: "school",
-    abbreviation: "Fra",
+    abbreviation: "Français",
   },
   {
     id: uuidv4(),
     name: "Histoire-Géographie",
     color: "#FFC300",
     subjectType: "school",
-    abbreviation: "H-G",
+    abbreviation: "Histoire-Géographie",
   },
   {
     id: uuidv4(),
     name: "Physique-Chimie",
     color: "#DAF7A6",
     subjectType: "school",
-    abbreviation: "P-C",
+    abbreviation: "Physique-Chimie",
   },
   {
     id: uuidv4(),
@@ -138,21 +149,21 @@ const defaultSubjects: Subject[] = [
     name: "Anglais",
     color: "#FFC0CB",
     subjectType: "school",
-    abbreviation: "Ang",
+    abbreviation: "Anglais",
   },
   {
     id: uuidv4(),
     name: "Espagnol",
     color: "#F4A460",
     subjectType: "school",
-    abbreviation: "Esp",
+    abbreviation: "Espagnol",
   },
   {
     id: uuidv4(),
     name: "Allemand",
     color: "#A9A9A9",
     subjectType: "school",
-    abbreviation: "All",
+    abbreviation: "Allemand",
   },
   {
     id: uuidv4(),
@@ -174,7 +185,7 @@ const defaultSubjects: Subject[] = [
     name: "Musique (Cours)",
     color: "#FF69B4",
     subjectType: "school",
-    abbreviation: "Zik",
+    abbreviation: "Musique",
     icon: "🎼",
   },
   {
@@ -182,7 +193,7 @@ const defaultSubjects: Subject[] = [
     name: "Arts Plastiques",
     color: "#FFA07A",
     subjectType: "school",
-    abbreviation: "ArtP",
+    abbreviation: "ArtPlast",
     icon: "🎨",
   },
 
@@ -300,6 +311,7 @@ const initialState = {
   currentWeekType: "a" as WeekDesignation,
   showSaturday: false,
   selectedActivityId: null,
+  selectedSlotForPanel: null, // Added initial state for selectedSlotForPanel
 };
 
 export const useTimetableStore = create<TimetableState>()(
@@ -417,6 +429,8 @@ export const useTimetableStore = create<TimetableState>()(
       setCurrentWeekType: (currentWeekType) => set({ currentWeekType }),
       setShowSaturday: (showSaturday) => set({ showSaturday }),
       setSelectedActivityId: (id) => set({ selectedActivityId: id }),
+      setSelectedSlotForPanel: (selectedSlotForPanel) =>
+        set({ selectedSlotForPanel }), // Added setter implementation
       reset: () => set({ ...initialState, entries: [] }), // Ensure entries are reset correctly
     }),
     {

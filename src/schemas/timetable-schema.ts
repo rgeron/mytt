@@ -56,6 +56,13 @@ export const TimetableSubEntrySchema = z.object({
   room: z.string().optional(),
   teacher: z.string().optional(),
   notes: z.string().optional(),
+  overrideColor: z
+    .string()
+    .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Format de couleur invalide")
+    .optional(),
+  overrideIcon: z.string().optional(),
+  overrideAbbreviation: z.string().optional(),
+  overrideImage: z.string().url({ message: "URL d'image invalide" }).optional(),
 });
 
 export const TimetableEntrySchema = z

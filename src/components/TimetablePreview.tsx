@@ -36,6 +36,7 @@ export function TimetablePreview() {
     addEntry,
     removeSubEntry,
     currentWeekType,
+    setSelectedSlotForPanel,
   } = useTimetableStore();
 
   const [conflictDialogState, setConflictDialogState] = useState<{
@@ -99,10 +100,13 @@ export function TimetablePreview() {
   );
 
   const handleCellClick = (dayIndex: number, timeSlotIndex: number) => {
+    // Always set the selected slot for the panel first
+    setSelectedSlotForPanel({ day: dayIndex, timeSlotIndex });
+
     if (!selectedActivityId) return;
 
-    const existingEntry = findEntryForSlotCb(dayIndex, timeSlotIndex); // Use callback version
-    const newSubject = findSubjectCb(selectedActivityId); // Use callback version
+    const existingEntry = findEntryForSlotCb(dayIndex, timeSlotIndex);
+    const newSubject = findSubjectCb(selectedActivityId);
     if (!newSubject) return;
 
     const newSubEntryData: TimetableSubEntry = {
@@ -395,6 +399,15 @@ export function TimetablePreview() {
                   const hasAnyEntryInFirstSlot =
                     fullEntry?.weekA || fullEntry?.weekB || fullEntry?.weekC;
 
+                  // Determine effective properties for single subject display / non-multi-subject cell context
+                  const effectiveColor =
+                    subEntryToDisplay?.overrideColor || subjectToDisplay?.color;
+                  const effectiveAbbreviation =
+                    subEntryToDisplay?.overrideAbbreviation ||
+                    subjectToDisplay?.abbreviation;
+                  const effectiveName = subjectToDisplay?.name; // Name itself is not typically overridden at subEntry level
+                  // const effectiveIcon = subEntryToDisplay?.overrideIcon || subjectToDisplay?.icon; // For future icon display
+
                   const weekSubEntries = {
                     a: fullEntry?.weekA,
                     b: fullEntry?.weekB,
@@ -428,29 +441,29 @@ export function TimetablePreview() {
                       className={cn(
                         "relative bg-card border border-border overflow-hidden transition-colors cursor-pointer group",
                         subjectToDisplay && !isMultiSubjectCell
-                          ? "hover:bg-secondary/10" // Hover specific to single subject display
-                          : "hover:bg-muted/20" // Generic hover for multi-subject or empty
+                          ? "hover:bg-secondary/10"
+                          : "hover:bg-muted/20"
                       )}
                       style={{
                         gridColumn: dayIndex + 2,
                         gridRowStart: cellData.timeIndex + 2,
                         gridRowEnd: `span ${cellData.span}`,
                         backgroundColor:
-                          isMultiSubjectCell || !subjectToDisplay
-                            ? undefined // Rely on bg-card or strips' background
-                            : `${subjectToDisplay.color}20`,
+                          isMultiSubjectCell || !effectiveColor // Use effectiveColor
+                            ? undefined
+                            : `${effectiveColor}20`,
                         borderLeft: isMultiSubjectCell
                           ? selectedActivityId &&
                             findSubjectCb(selectedActivityId)
                             ? `4px dashed ${
-                                findSubjectCb(selectedActivityId)?.color ||
+                                findSubjectCb(selectedActivityId)?.color || // Dashed border uses selected activity color
                                 "transparent"
                               }`
                             : undefined
-                          : subjectToDisplay
-                          ? `4px solid ${subjectToDisplay.color}`
+                          : effectiveColor // Use effectiveColor for solid border
+                          ? `4px solid ${effectiveColor}`
                           : selectedActivityId &&
-                            findSubjectCb(selectedActivityId)
+                            findSubjectCb(selectedActivityId) // Fallback to dashed if no effective color but an activity is selected
                           ? `4px dashed ${
                               findSubjectCb(selectedActivityId)?.color ||
                               "transparent"
@@ -464,42 +477,53 @@ export function TimetablePreview() {
                       {isMultiSubjectCell ? (
                         <div className="flex flex-row h-full w-full">
                           {activeWeekSubjects.map(
-                            ({ week, subject, subEntry }, index, arr) => (
-                              <div
-                                key={`week-strip-${week}`}
-                                className={cn(
-                                  "flex-1 p-1 overflow-hidden flex flex-col justify-center items-center text-center",
-                                  index < arr.length - 1
-                                    ? "border-r" // Add border to all but the last strip
-                                    : ""
-                                )}
-                                style={{
-                                  backgroundColor: `${subject.color}20`,
-                                  borderColor: `${subject.color}50`, // Make border same color as bg but darker
-                                }}
-                              >
-                                <div className="font-semibold text-[10px] text-foreground truncate w-full">
-                                  {subject.name}
-                                </div>
-                                <div className="text-[8px] text-muted-foreground/80">
-                                  {`Sem. ${week.toUpperCase()}`}
-                                </div>
-                                {subEntry.room && showTimeLabelsInCell && (
-                                  <div className="text-[9px] text-muted-foreground truncate w-full">
-                                    S: {subEntry.room}
+                            ({ week, subject, subEntry }, index, arr) => {
+                              // For multi-subject strips, calculate effective properties per strip
+                              const stripEffectiveColor =
+                                subEntry?.overrideColor || subject.color;
+                              const stripEffectiveAbbreviation =
+                                subEntry?.overrideAbbreviation ||
+                                subject.abbreviation;
+                              const stripEffectiveName = subject.name;
+                              // const stripEffectiveIcon = subEntry?.overrideIcon || subject.icon;
+
+                              return (
+                                <div
+                                  key={`week-strip-${week}`}
+                                  className={cn(
+                                    "flex-1 p-1 overflow-hidden flex flex-col justify-center items-center text-center",
+                                    index < arr.length - 1 ? "border-r" : ""
+                                  )}
+                                  style={{
+                                    backgroundColor: `${stripEffectiveColor}20`, // Use stripEffectiveColor
+                                    borderColor: `${stripEffectiveColor}50`,
+                                  }}
+                                >
+                                  <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                    {stripEffectiveAbbreviation ||
+                                      stripEffectiveName}{" "}
+                                    {/* Display abbreviation or name */}
                                   </div>
-                                )}
-                                {subEntry.teacher && showTimeLabelsInCell && (
-                                  <div className="text-[9px] text-muted-foreground truncate w-full">
-                                    P: {subEntry.teacher}
+                                  <div className="text-[8px] text-muted-foreground/80">
+                                    {`Sem. ${week.toUpperCase()}`}
                                   </div>
-                                )}
-                              </div>
-                            )
+                                  {subEntry.room && showTimeLabelsInCell && (
+                                    <div className="text-[9px] text-muted-foreground truncate w-full">
+                                      S: {subEntry.room}
+                                    </div>
+                                  )}
+                                  {subEntry.teacher && showTimeLabelsInCell && (
+                                    <div className="text-[9px] text-muted-foreground truncate w-full">
+                                      P: {subEntry.teacher}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
                           )}
                         </div>
                       ) : subjectToDisplay ? (
-                        // Existing single subject display logic
+                        // Existing single subject display logic, now using effective properties
                         <div
                           className={cn(
                             "flex flex-col h-full justify-center",
@@ -507,7 +531,8 @@ export function TimetablePreview() {
                           )}
                         >
                           <div className="font-semibold text-xs text-foreground truncate">
-                            {subjectToDisplay.name}
+                            {effectiveAbbreviation || effectiveName}{" "}
+                            {/* Display abbreviation or name */}
                           </div>
                           {subEntryToDisplay?.room && showTimeLabelsInCell && (
                             <div className="text-xs text-muted-foreground truncate mt-1">
