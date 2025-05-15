@@ -18,6 +18,7 @@ export type Subject = {
   icon?: string;
   abbreviation?: string;
   image?: string;
+  imagePosition?: "left" | "right" | "background";
   teacherOrCoach?: string[];
 };
 
@@ -31,6 +32,7 @@ export type TimetableSubEntry = {
   overrideIcon?: string;
   overrideAbbreviation?: string;
   overrideImage?: string;
+  overrideImagePosition?: "left" | "right" | "background";
 };
 
 // Updated TimetableEntry type

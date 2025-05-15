@@ -614,7 +614,12 @@ export function TimetablePreview() {
                         <div
                           className="flex flex-col h-full w-full justify-center overflow-hidden"
                           style={
-                            effectiveImage
+                            effectiveImage &&
+                            ((!subEntryToDisplay?.overrideImagePosition &&
+                              !subjectToDisplay.imagePosition) ||
+                              subEntryToDisplay?.overrideImagePosition ===
+                                "background" ||
+                              subjectToDisplay.imagePosition === "background")
                               ? {
                                   backgroundImage: `url(${effectiveImage})`,
                                   backgroundSize: "cover",
@@ -625,51 +630,226 @@ export function TimetablePreview() {
                               : undefined
                           }
                         >
-                          {/* Main content with adaptive sizing */}
-                          <div
-                            className={cn(
-                              "flex flex-col w-full",
-                              showTimeLabelsInCell ? "p-1" : "p-0.5",
-                              "text-center"
-                            )}
-                          >
-                            {/* Subject name with optional icon */}
-                            <div className="flex items-center justify-center">
-                              {effectiveIcon && (
-                                <span className="inline-block mr-0.5 text-[10px]">
-                                  {effectiveIcon}
-                                </span>
-                              )}
-                              <div className="font-semibold text-[10px] text-foreground truncate w-full">
-                                {effectiveAbbreviation || effectiveName}
-                              </div>
-                            </div>
-
-                            {/* Additional details with responsive visibility */}
-                            {showTimeLabelsInCell && (
-                              <div className="mt-0.5 space-y-0.5">
-                                {subEntryToDisplay?.room && (
-                                  <div className="text-[8px] text-muted-foreground truncate">
-                                    <span className="font-medium">S:</span>{" "}
-                                    {subEntryToDisplay.room}
-                                  </div>
-                                )}
-                                {Array.isArray(subEntryToDisplay?.teachers)
-                                  ? subEntryToDisplay.teachers.length > 0 && (
-                                      <div className="text-[8px] text-muted-foreground truncate">
-                                        <span className="font-medium">P:</span>{" "}
-                                        {subEntryToDisplay.teachers.join(", ")}
+                          {/* Image positioning based on preferences */}
+                          {effectiveImage &&
+                            (subEntryToDisplay?.overrideImagePosition ===
+                              "left" ||
+                              (!subEntryToDisplay?.overrideImagePosition &&
+                                subjectToDisplay.imagePosition === "left")) && (
+                              <div className="flex h-full">
+                                <div className="h-full aspect-square overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={effectiveImage}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  {/* Main content with adaptive sizing */}
+                                  <div
+                                    className={cn(
+                                      "flex flex-col w-full",
+                                      showTimeLabelsInCell ? "p-1" : "p-0.5",
+                                      "text-center"
+                                    )}
+                                  >
+                                    {/* Subject name with optional icon */}
+                                    <div className="flex items-center justify-center">
+                                      {effectiveIcon && (
+                                        <span className="inline-block mr-0.5 text-[10px]">
+                                          {effectiveIcon}
+                                        </span>
+                                      )}
+                                      <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                        {effectiveAbbreviation || effectiveName}
                                       </div>
-                                    )
-                                  : subEntryToDisplay?.teachers && (
-                                      <div className="text-[8px] text-muted-foreground truncate">
-                                        <span className="font-medium">P:</span>{" "}
-                                        {subEntryToDisplay.teachers}
+                                    </div>
+
+                                    {/* Additional details with responsive visibility */}
+                                    {showTimeLabelsInCell && (
+                                      <div className="mt-0.5 space-y-0.5">
+                                        {subEntryToDisplay?.room && (
+                                          <div className="text-[8px] text-muted-foreground truncate">
+                                            <span className="font-medium">
+                                              S:
+                                            </span>{" "}
+                                            {subEntryToDisplay.room}
+                                          </div>
+                                        )}
+                                        {Array.isArray(
+                                          subEntryToDisplay?.teachers
+                                        )
+                                          ? subEntryToDisplay.teachers.length >
+                                              0 && (
+                                              <div className="text-[8px] text-muted-foreground truncate">
+                                                <span className="font-medium">
+                                                  P:
+                                                </span>{" "}
+                                                {subEntryToDisplay.teachers.join(
+                                                  ", "
+                                                )}
+                                              </div>
+                                            )
+                                          : subEntryToDisplay?.teachers && (
+                                              <div className="text-[8px] text-muted-foreground truncate">
+                                                <span className="font-medium">
+                                                  P:
+                                                </span>{" "}
+                                                {subEntryToDisplay.teachers}
+                                              </div>
+                                            )}
                                       </div>
                                     )}
+                                  </div>
+                                </div>
                               </div>
                             )}
-                          </div>
+
+                          {effectiveImage &&
+                            (subEntryToDisplay?.overrideImagePosition ===
+                              "right" ||
+                              (!subEntryToDisplay?.overrideImagePosition &&
+                                subjectToDisplay.imagePosition ===
+                                  "right")) && (
+                              <div className="flex h-full">
+                                <div className="flex-1">
+                                  {/* Main content with adaptive sizing */}
+                                  <div
+                                    className={cn(
+                                      "flex flex-col w-full",
+                                      showTimeLabelsInCell ? "p-1" : "p-0.5",
+                                      "text-center"
+                                    )}
+                                  >
+                                    {/* Subject name with optional icon */}
+                                    <div className="flex items-center justify-center">
+                                      {effectiveIcon && (
+                                        <span className="inline-block mr-0.5 text-[10px]">
+                                          {effectiveIcon}
+                                        </span>
+                                      )}
+                                      <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                        {effectiveAbbreviation || effectiveName}
+                                      </div>
+                                    </div>
+
+                                    {/* Additional details with responsive visibility */}
+                                    {showTimeLabelsInCell && (
+                                      <div className="mt-0.5 space-y-0.5">
+                                        {subEntryToDisplay?.room && (
+                                          <div className="text-[8px] text-muted-foreground truncate">
+                                            <span className="font-medium">
+                                              S:
+                                            </span>{" "}
+                                            {subEntryToDisplay.room}
+                                          </div>
+                                        )}
+                                        {Array.isArray(
+                                          subEntryToDisplay?.teachers
+                                        )
+                                          ? subEntryToDisplay.teachers.length >
+                                              0 && (
+                                              <div className="text-[8px] text-muted-foreground truncate">
+                                                <span className="font-medium">
+                                                  P:
+                                                </span>{" "}
+                                                {subEntryToDisplay.teachers.join(
+                                                  ", "
+                                                )}
+                                              </div>
+                                            )
+                                          : subEntryToDisplay?.teachers && (
+                                              <div className="text-[8px] text-muted-foreground truncate">
+                                                <span className="font-medium">
+                                                  P:
+                                                </span>{" "}
+                                                {subEntryToDisplay.teachers}
+                                              </div>
+                                            )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="h-full aspect-square overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={effectiveImage}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Default display if no image position or if background */}
+                          {(!effectiveImage ||
+                            (subEntryToDisplay?.overrideImagePosition !==
+                              "left" &&
+                              subEntryToDisplay?.overrideImagePosition !==
+                                "right" &&
+                              subjectToDisplay.imagePosition !== "left" &&
+                              subjectToDisplay.imagePosition !== "right")) && (
+                            /* Main content with adaptive sizing */
+                            <div
+                              className={cn(
+                                "flex flex-col w-full",
+                                showTimeLabelsInCell ? "p-1" : "p-0.5",
+                                "text-center"
+                              )}
+                            >
+                              {/* Subject name with optional icon */}
+                              <div className="flex items-center justify-center">
+                                {effectiveIcon && (
+                                  <span className="inline-block mr-0.5 text-[10px]">
+                                    {effectiveIcon}
+                                  </span>
+                                )}
+                                <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                  {effectiveAbbreviation || effectiveName}
+                                </div>
+                              </div>
+
+                              {/* Additional details with responsive visibility */}
+                              {showTimeLabelsInCell && (
+                                <div className="mt-0.5 space-y-0.5">
+                                  {subEntryToDisplay?.room && (
+                                    <div className="text-[8px] text-muted-foreground truncate">
+                                      <span className="font-medium">S:</span>{" "}
+                                      {subEntryToDisplay.room}
+                                    </div>
+                                  )}
+                                  {Array.isArray(subEntryToDisplay?.teachers)
+                                    ? subEntryToDisplay.teachers.length > 0 && (
+                                        <div className="text-[8px] text-muted-foreground truncate">
+                                          <span className="font-medium">
+                                            P:
+                                          </span>{" "}
+                                          {subEntryToDisplay.teachers.join(
+                                            ", "
+                                          )}
+                                        </div>
+                                      )
+                                    : subEntryToDisplay?.teachers && (
+                                        <div className="text-[8px] text-muted-foreground truncate">
+                                          <span className="font-medium">
+                                            P:
+                                          </span>{" "}
+                                          {subEntryToDisplay.teachers}
+                                        </div>
+                                      )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ) : null}
 

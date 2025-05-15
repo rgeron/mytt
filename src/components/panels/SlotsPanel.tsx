@@ -8,6 +8,7 @@ import {
   MultipleSelector,
   type Option,
 } from "@/components/ui/multiple-selector";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -15,7 +16,7 @@ import {
   type TimetableEntry,
   type WeekDesignation,
 } from "@/lib/store/timetable-store";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Helper to get the week key for TimetableEntry
 function getWeekKey(
@@ -33,6 +34,7 @@ type EditableProperty =
   | "abbreviation"
   | "teachers"
   | "image"
+  | "imagePosition"
   | "room";
 
 interface FormFields {
@@ -41,6 +43,7 @@ interface FormFields {
   abbreviation?: string;
   teachers?: Option[];
   image?: string;
+  imagePosition?: "left" | "right" | "background";
   room?: string;
   subjectTeacherOrCoach?: string[];
   subEntryTeachers?: string[];
@@ -52,6 +55,7 @@ interface ScopeStates {
   abbreviationScope: boolean;
   teacherScope: boolean;
   imageScope: boolean;
+  imagePositionScope: boolean;
 }
 
 export function SlotsPanel() {
@@ -64,6 +68,7 @@ export function SlotsPanel() {
     updateSubEntry,
   } = useTimetableStore();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formState, setFormState] = useState<FormFields>({});
   const [scopeStates, setScopeStates] = useState<ScopeStates>({
     colorScope: true,
@@ -71,6 +76,7 @@ export function SlotsPanel() {
     abbreviationScope: true,
     teacherScope: true,
     imageScope: true,
+    imagePositionScope: true,
   });
 
   const { subject, subEntryForCurrentWeek, entry } = useMemo(() => {
@@ -133,6 +139,10 @@ export function SlotsPanel() {
           subject.abbreviation ||
           "",
         image: subEntryForCurrentWeek?.overrideImage || subject.image || "",
+        imagePosition:
+          subEntryForCurrentWeek?.overrideImagePosition ||
+          subject.imagePosition ||
+          "background",
         room: subEntryForCurrentWeek?.room || "",
         teachers: teacherOptions,
         subjectTeacherOrCoach: ensureArray(subject.teacherOrCoach),
@@ -182,8 +192,20 @@ export function SlotsPanel() {
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageDataUrl = e.target?.result as string;
+      setFormState((prev) => ({ ...prev, image: imageDataUrl }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleScopeChange = (
-    propertyKey: keyof Omit<ScopeStates, "roomScope">,
+    propertyKey: keyof ScopeStates,
     newScope: boolean
   ) => {
     setScopeStates((prev) => ({ ...prev, [propertyKey]: newScope }));
@@ -263,6 +285,23 @@ export function SlotsPanel() {
             subjectId,
           });
         break;
+      case "imagePosition":
+        if (scopeStates.imagePositionScope)
+          updateSubject(subject.id, {
+            imagePosition: formState.imagePosition as
+              | "left"
+              | "right"
+              | "background",
+          });
+        else
+          updateSubEntry(day, timeSlotIndex, currentWeekType, {
+            overrideImagePosition: formState.imagePosition as
+              | "left"
+              | "right"
+              | "background",
+            subjectId,
+          });
+        break;
       case "room":
         updateSubEntry(day, timeSlotIndex, currentWeekType, {
           room: formState.room,
@@ -276,7 +315,7 @@ export function SlotsPanel() {
 
   const renderPropertyEditor = (
     label: string,
-    formField: keyof Omit<FormFields, "teachers">,
+    formField: keyof Omit<FormFields, "teachers" | "imagePosition">,
     editableProperty: EditableProperty,
     inputType: string = "text"
   ) => {
@@ -305,10 +344,7 @@ export function SlotsPanel() {
               id={`${formField}-scope`}
               checked={currentScope}
               onCheckedChange={(checked) =>
-                handleScopeChange(
-                  scopeKey as keyof Omit<ScopeStates, "roomScope">,
-                  checked
-                )
+                handleScopeChange(scopeKey as keyof ScopeStates, checked)
               }
             />
             <Label htmlFor={`${formField}-scope`} className="text-xs">
@@ -360,6 +396,124 @@ export function SlotsPanel() {
     );
   };
 
+  const renderImageEditor = () => {
+    const scopeKey = "imageScope";
+    const currentScope = scopeStates[scopeKey];
+
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="image">Image</Label>
+          <div className="flex items-center space-x-2">
+            <Input
+              id="image"
+              type="text"
+              value={formState.image || ""}
+              onChange={(e) => handleInputChange("image", e.target.value)}
+              placeholder="URL de l'image"
+              className="flex-grow"
+            />
+            <Button onClick={() => handleSubmit("image")} size="sm">
+              Save
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-2 mt-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Choisir une image
+            </Button>
+
+            {formState.image && (
+              <div className="relative w-10 h-10 border rounded overflow-hidden">
+                <img
+                  src={formState.image}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-2 mt-2">
+            <Switch
+              id="image-scope"
+              checked={currentScope}
+              onCheckedChange={(checked) =>
+                handleScopeChange(scopeKey, checked)
+              }
+            />
+            <Label htmlFor="image-scope" className="text-xs">
+              {currentScope ? "Appliquer partout" : "Appliquer juste ici"}
+            </Label>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="imagePosition">Position de l'image</Label>
+          <RadioGroup
+            value={formState.imagePosition || "background"}
+            onValueChange={(value) =>
+              handleInputChange(
+                "imagePosition",
+                value as "left" | "right" | "background"
+              )
+            }
+            className="flex space-x-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="left" id="image-left" />
+              <Label htmlFor="image-left">Gauche</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="right" id="image-right" />
+              <Label htmlFor="image-right">Droite</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="background" id="image-background" />
+              <Label htmlFor="image-background">Arrière-plan</Label>
+            </div>
+          </RadioGroup>
+
+          <div className="flex items-center space-x-2 mt-2">
+            <Button onClick={() => handleSubmit("imagePosition")} size="sm">
+              Save
+            </Button>
+          </div>
+
+          <div className="flex items-center space-x-2 mt-2">
+            <Switch
+              id="imagePosition-scope"
+              checked={scopeStates.imagePositionScope}
+              onCheckedChange={(checked) =>
+                handleScopeChange("imagePositionScope", checked)
+              }
+            />
+            <Label htmlFor="imagePosition-scope" className="text-xs">
+              {scopeStates.imagePositionScope
+                ? "Appliquer partout"
+                : "Appliquer juste ici"}
+            </Label>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -383,7 +537,7 @@ export function SlotsPanel() {
               "abbreviation"
             )}
             {renderTeachersEditor()}
-            {renderPropertyEditor("Image (URL)", "image", "image")}
+            {renderImageEditor()}
             {renderPropertyEditor("Salle", "room", "room")}
           </>
         )}
