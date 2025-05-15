@@ -391,33 +391,68 @@ export function TimetablePreview() {
                   }
 
                   const { subjectToDisplay, subEntryToDisplay } = cellData;
+                  const fullEntry = cellData.currentFullEntry;
                   const hasAnyEntryInFirstSlot =
-                    cellData.currentFullEntry?.weekA ||
-                    cellData.currentFullEntry?.weekB ||
-                    cellData.currentFullEntry?.weekC;
+                    fullEntry?.weekA || fullEntry?.weekB || fullEntry?.weekC;
+
+                  const weekSubEntries = {
+                    a: fullEntry?.weekA,
+                    b: fullEntry?.weekB,
+                    c: fullEntry?.weekC,
+                  };
+
+                  const activeWeekSubjects: {
+                    week: WeekDesignation;
+                    subject: Subject;
+                    subEntry: TimetableSubEntry;
+                  }[] = [];
+                  (["a", "b", "c"] as WeekDesignation[]).forEach((week) => {
+                    const subEntry =
+                      weekSubEntries[week as keyof typeof weekSubEntries];
+                    if (subEntry) {
+                      const subject = findSubjectCb(subEntry.subjectId);
+                      if (subject) {
+                        activeWeekSubjects.push({ week, subject, subEntry });
+                      }
+                    }
+                  });
+
+                  const uniqueSubjectIdsInCell = Array.from(
+                    new Set(activeWeekSubjects.map((item) => item.subject.id))
+                  );
+                  const isMultiSubjectCell = uniqueSubjectIdsInCell.length > 1;
 
                   return (
                     <div
                       key={`cell-${dayIndex}-${cellData.timeIndex}`}
                       className={cn(
                         "relative bg-card border border-border overflow-hidden transition-colors cursor-pointer group",
-                        subjectToDisplay
-                          ? "hover:bg-secondary/10"
-                          : "hover:bg-muted/20"
+                        subjectToDisplay && !isMultiSubjectCell
+                          ? "hover:bg-secondary/10" // Hover specific to single subject display
+                          : "hover:bg-muted/20" // Generic hover for multi-subject or empty
                       )}
                       style={{
                         gridColumn: dayIndex + 2,
                         gridRowStart: cellData.timeIndex + 2,
                         gridRowEnd: `span ${cellData.span}`,
-                        backgroundColor: subjectToDisplay
-                          ? `${subjectToDisplay.color}20`
-                          : undefined,
-                        borderLeft: subjectToDisplay
+                        backgroundColor:
+                          isMultiSubjectCell || !subjectToDisplay
+                            ? undefined // Rely on bg-card or strips' background
+                            : `${subjectToDisplay.color}20`,
+                        borderLeft: isMultiSubjectCell
+                          ? selectedActivityId &&
+                            findSubjectCb(selectedActivityId)
+                            ? `4px dashed ${
+                                findSubjectCb(selectedActivityId)?.color ||
+                                "transparent"
+                              }`
+                            : undefined
+                          : subjectToDisplay
                           ? `4px solid ${subjectToDisplay.color}`
                           : selectedActivityId &&
-                            findSubjectCb(selectedActivityId) // Use callback version
+                            findSubjectCb(selectedActivityId)
                           ? `4px dashed ${
-                              findSubjectCb(selectedActivityId)?.color || // Use callback version
+                              findSubjectCb(selectedActivityId)?.color ||
                               "transparent"
                             }`
                           : undefined,
@@ -426,55 +461,92 @@ export function TimetablePreview() {
                         handleCellClick(dayIndex, cellData.timeIndex)
                       }
                     >
-                      {subjectToDisplay && (
-                        <>
-                          <div
-                            className={cn(
-                              "flex flex-col h-full justify-center",
-                              showTimeLabelsInCell ? "p-2" : "p-0 text-center"
-                            )}
-                          >
-                            <div className="font-semibold text-xs text-foreground truncate">
-                              {subjectToDisplay.name}
-                            </div>
-                            {subEntryToDisplay?.room &&
-                              showTimeLabelsInCell && (
-                                <div className="text-xs text-muted-foreground truncate mt-1">
-                                  <span className="font-medium">Salle:</span>{" "}
-                                  {subEntryToDisplay.room}
+                      {isMultiSubjectCell ? (
+                        <div className="flex flex-row h-full w-full">
+                          {activeWeekSubjects.map(
+                            ({ week, subject, subEntry }, index, arr) => (
+                              <div
+                                key={`week-strip-${week}`}
+                                className={cn(
+                                  "flex-1 p-1 overflow-hidden flex flex-col justify-center items-center text-center",
+                                  index < arr.length - 1
+                                    ? "border-r" // Add border to all but the last strip
+                                    : ""
+                                )}
+                                style={{
+                                  backgroundColor: `${subject.color}20`,
+                                  borderColor: `${subject.color}50`, // Make border same color as bg but darker
+                                }}
+                              >
+                                <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                  {subject.name}
                                 </div>
-                              )}
-                            {subEntryToDisplay?.teacher &&
-                              showTimeLabelsInCell && (
-                                <div className="text-xs text-muted-foreground truncate">
-                                  <span className="font-medium">Prof:</span>{" "}
-                                  {subEntryToDisplay.teacher}
+                                <div className="text-[8px] text-muted-foreground/80">
+                                  {`Sem. ${week.toUpperCase()}`}
                                 </div>
-                              )}
-                          </div>
-                          {hasAnyEntryInFirstSlot && (
-                            <button
-                              title="Supprimer toutes les entrées de ce créneau"
-                              onClick={(e) =>
-                                handleRemoveFullEntry(
-                                  e,
-                                  dayIndex,
-                                  cellData.timeIndex,
-                                  cellData.span
-                                )
-                              }
-                              className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
-                            >
-                              <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
-                            </button>
+                                {subEntry.room && showTimeLabelsInCell && (
+                                  <div className="text-[9px] text-muted-foreground truncate w-full">
+                                    S: {subEntry.room}
+                                  </div>
+                                )}
+                                {subEntry.teacher && showTimeLabelsInCell && (
+                                  <div className="text-[9px] text-muted-foreground truncate w-full">
+                                    P: {subEntry.teacher}
+                                  </div>
+                                )}
+                              </div>
+                            )
                           )}
-                        </>
+                        </div>
+                      ) : subjectToDisplay ? (
+                        // Existing single subject display logic
+                        <div
+                          className={cn(
+                            "flex flex-col h-full justify-center",
+                            showTimeLabelsInCell ? "p-2" : "p-0 text-center"
+                          )}
+                        >
+                          <div className="font-semibold text-xs text-foreground truncate">
+                            {subjectToDisplay.name}
+                          </div>
+                          {subEntryToDisplay?.room && showTimeLabelsInCell && (
+                            <div className="text-xs text-muted-foreground truncate mt-1">
+                              <span className="font-medium">Salle:</span>{" "}
+                              {subEntryToDisplay.room}
+                            </div>
+                          )}
+                          {subEntryToDisplay?.teacher &&
+                            showTimeLabelsInCell && (
+                              <div className="text-xs text-muted-foreground truncate">
+                                <span className="font-medium">Prof:</span>{" "}
+                                {subEntryToDisplay.teacher}
+                              </div>
+                            )}
+                        </div>
+                      ) : null}
+
+                      {/* Eraser Icon: Show if there's any entry in the slot (original or multi) */}
+                      {hasAnyEntryInFirstSlot && (
+                        <button
+                          title="Supprimer toutes les entrées de ce créneau"
+                          onClick={(e) =>
+                            handleRemoveFullEntry(
+                              e,
+                              dayIndex,
+                              cellData.timeIndex,
+                              cellData.span
+                            )
+                          }
+                          className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
+                        >
+                          <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
+                        </button>
                       )}
-                      {cellData.currentFullEntry &&
-                        (cellData.currentFullEntry.weekA ||
-                          cellData.currentFullEntry.weekB ||
-                          cellData.currentFullEntry.weekC) &&
-                        !subjectToDisplay && (
+
+                      {/* Info Icon: Show if not multi-subject, no effective subject displayed, but other weeks have data */}
+                      {!isMultiSubjectCell &&
+                        !subjectToDisplay &&
+                        hasAnyEntryInFirstSlot && (
                           <div className="flex items-center justify-center h-full">
                             <InfoIcon className="h-4 w-4 text-muted-foreground/50" />
                           </div>
