@@ -611,194 +611,13 @@ export function TimetablePreview() {
                         </div>
                       ) : subjectToDisplay ? (
                         // Single subject display logic with effective properties
-                        <div
-                          className="flex flex-col h-full w-full justify-center overflow-hidden"
-                          style={
-                            effectiveImage &&
-                            ((!subEntryToDisplay?.overrideImagePosition &&
-                              !subjectToDisplay.imagePosition) ||
-                              subEntryToDisplay?.overrideImagePosition ===
-                                "background" ||
-                              subjectToDisplay.imagePosition === "background")
-                              ? {
-                                  backgroundImage: `url(${effectiveImage})`,
-                                  backgroundSize: "cover",
-                                  backgroundPosition: "center",
-                                  backgroundRepeat: "no-repeat",
-                                  backgroundBlendMode: "overlay",
-                                }
-                              : undefined
-                          }
-                        >
-                          {/* Image positioning based on preferences */}
-                          {effectiveImage &&
-                            (subEntryToDisplay?.overrideImagePosition ===
-                              "left" ||
-                              (!subEntryToDisplay?.overrideImagePosition &&
-                                subjectToDisplay.imagePosition === "left")) && (
-                              <div className="flex h-full">
-                                <div className="h-full aspect-square overflow-hidden flex-shrink-0">
-                                  <img
-                                    src={effectiveImage}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
-                                    }}
-                                  />
-                                </div>
-                                <div className="flex-1">
-                                  {/* Main content with adaptive sizing */}
-                                  <div
-                                    className={cn(
-                                      "flex flex-col w-full",
-                                      showTimeLabelsInCell ? "p-1" : "p-0.5",
-                                      "text-center"
-                                    )}
-                                  >
-                                    {/* Subject name with optional icon */}
-                                    <div className="flex items-center justify-center">
-                                      {effectiveIcon && (
-                                        <span className="inline-block mr-0.5 text-[10px]">
-                                          {effectiveIcon}
-                                        </span>
-                                      )}
-                                      <div className="font-semibold text-[10px] text-foreground truncate w-full">
-                                        {effectiveAbbreviation || effectiveName}
-                                      </div>
-                                    </div>
+                        (() => {
+                          const effectiveImagePosition =
+                            subEntryToDisplay?.overrideImagePosition ||
+                            subjectToDisplay?.imagePosition ||
+                            "left"; // Default to left
 
-                                    {/* Additional details with responsive visibility */}
-                                    {showTimeLabelsInCell && (
-                                      <div className="mt-0.5 space-y-0.5">
-                                        {subEntryToDisplay?.room && (
-                                          <div className="text-[8px] text-muted-foreground truncate">
-                                            <span className="font-medium">
-                                              S:
-                                            </span>{" "}
-                                            {subEntryToDisplay.room}
-                                          </div>
-                                        )}
-                                        {Array.isArray(
-                                          subEntryToDisplay?.teachers
-                                        )
-                                          ? subEntryToDisplay.teachers.length >
-                                              0 && (
-                                              <div className="text-[8px] text-muted-foreground truncate">
-                                                <span className="font-medium">
-                                                  P:
-                                                </span>{" "}
-                                                {subEntryToDisplay.teachers.join(
-                                                  ", "
-                                                )}
-                                              </div>
-                                            )
-                                          : subEntryToDisplay?.teachers && (
-                                              <div className="text-[8px] text-muted-foreground truncate">
-                                                <span className="font-medium">
-                                                  P:
-                                                </span>{" "}
-                                                {subEntryToDisplay.teachers}
-                                              </div>
-                                            )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                          {effectiveImage &&
-                            (subEntryToDisplay?.overrideImagePosition ===
-                              "right" ||
-                              (!subEntryToDisplay?.overrideImagePosition &&
-                                subjectToDisplay.imagePosition ===
-                                  "right")) && (
-                              <div className="flex h-full">
-                                <div className="flex-1">
-                                  {/* Main content with adaptive sizing */}
-                                  <div
-                                    className={cn(
-                                      "flex flex-col w-full",
-                                      showTimeLabelsInCell ? "p-1" : "p-0.5",
-                                      "text-center"
-                                    )}
-                                  >
-                                    {/* Subject name with optional icon */}
-                                    <div className="flex items-center justify-center">
-                                      {effectiveIcon && (
-                                        <span className="inline-block mr-0.5 text-[10px]">
-                                          {effectiveIcon}
-                                        </span>
-                                      )}
-                                      <div className="font-semibold text-[10px] text-foreground truncate w-full">
-                                        {effectiveAbbreviation || effectiveName}
-                                      </div>
-                                    </div>
-
-                                    {/* Additional details with responsive visibility */}
-                                    {showTimeLabelsInCell && (
-                                      <div className="mt-0.5 space-y-0.5">
-                                        {subEntryToDisplay?.room && (
-                                          <div className="text-[8px] text-muted-foreground truncate">
-                                            <span className="font-medium">
-                                              S:
-                                            </span>{" "}
-                                            {subEntryToDisplay.room}
-                                          </div>
-                                        )}
-                                        {Array.isArray(
-                                          subEntryToDisplay?.teachers
-                                        )
-                                          ? subEntryToDisplay.teachers.length >
-                                              0 && (
-                                              <div className="text-[8px] text-muted-foreground truncate">
-                                                <span className="font-medium">
-                                                  P:
-                                                </span>{" "}
-                                                {subEntryToDisplay.teachers.join(
-                                                  ", "
-                                                )}
-                                              </div>
-                                            )
-                                          : subEntryToDisplay?.teachers && (
-                                              <div className="text-[8px] text-muted-foreground truncate">
-                                                <span className="font-medium">
-                                                  P:
-                                                </span>{" "}
-                                                {subEntryToDisplay.teachers}
-                                              </div>
-                                            )}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="h-full aspect-square overflow-hidden flex-shrink-0">
-                                  <img
-                                    src={effectiveImage}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                          {/* Default display if no image position or if background */}
-                          {(!effectiveImage ||
-                            (subEntryToDisplay?.overrideImagePosition !==
-                              "left" &&
-                              subEntryToDisplay?.overrideImagePosition !==
-                                "right" &&
-                              subjectToDisplay.imagePosition !== "left" &&
-                              subjectToDisplay.imagePosition !== "right")) && (
-                            /* Main content with adaptive sizing */
+                          const content = (
                             <div
                               className={cn(
                                 "flex flex-col w-full",
@@ -849,11 +668,74 @@ export function TimetablePreview() {
                                 </div>
                               )}
                             </div>
-                          )}
-                        </div>
-                      ) : null}
+                          );
+
+                          if (
+                            effectiveImage &&
+                            effectiveImagePosition === "left"
+                          ) {
+                            return (
+                              <div className="flex h-full w-full">
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5">
+                                  <img
+                                    src={effectiveImage}
+                                    alt=""
+                                    className="max-h-full max-w-full object-contain"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex-1 flex items-center justify-center">
+                                  {content}
+                                </div>
+                              </div>
+                            );
+                          }
+                          if (
+                            effectiveImage &&
+                            effectiveImagePosition === "right"
+                          ) {
+                            return (
+                              <div className="flex h-full w-full">
+                                <div className="flex-1 flex items-center justify-center">
+                                  {content}
+                                </div>
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5">
+                                  <img
+                                    src={effectiveImage}
+                                    alt=""
+                                    className="max-h-full max-w-full object-contain"
+                                    onError={(e) => {
+                                      (
+                                        e.target as HTMLImageElement
+                                      ).style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          }
+                          // Content only (no image or invalid position, though invalid position should default to left)
+                          return (
+                            <div className="flex flex-col h-full w-full justify-center overflow-hidden">
+                              {content}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        // This is the !subjectToDisplay case for a non-multi-subject cell
+                        hasAnyEntryInFirstSlot && (
+                          <div className="flex items-center justify-center h-full">
+                            <InfoIcon className="h-4 w-4 text-muted-foreground/50" />
+                          </div>
+                        )
+                      )}
 
                       {/* Info Icon: Show if not multi-subject, no effective subject displayed, but other weeks have data */}
+                      {/* This specific InfoIcon rendering might be redundant now or needs to be re-evaluated based on the logic above */}
                       {!isMultiSubjectCell &&
                         !subjectToDisplay &&
                         hasAnyEntryInFirstSlot && (

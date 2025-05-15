@@ -43,7 +43,7 @@ interface FormFields {
   abbreviation?: string;
   teachers?: Option[];
   image?: string;
-  imagePosition?: "left" | "right" | "background";
+  imagePosition?: "left" | "right";
   room?: string;
   subjectTeacherOrCoach?: string[];
   subEntryTeachers?: string[];
@@ -140,9 +140,17 @@ export function SlotsPanel() {
           "",
         image: subEntryForCurrentWeek?.overrideImage || subject.image || "",
         imagePosition:
-          subEntryForCurrentWeek?.overrideImagePosition ||
-          subject.imagePosition ||
-          "background",
+          (subEntryForCurrentWeek?.overrideImagePosition &&
+          subEntryForCurrentWeek.overrideImagePosition !== "left" &&
+          subEntryForCurrentWeek.overrideImagePosition !== "right"
+            ? "left"
+            : subEntryForCurrentWeek?.overrideImagePosition) ||
+          (subject.imagePosition &&
+          subject.imagePosition !== "left" &&
+          subject.imagePosition !== "right"
+            ? "left"
+            : subject.imagePosition) ||
+          "left",
         room: subEntryForCurrentWeek?.room || "",
         teachers: teacherOptions,
         subjectTeacherOrCoach: ensureArray(subject.teacherOrCoach),
@@ -209,6 +217,7 @@ export function SlotsPanel() {
     newScope: boolean
   ) => {
     setScopeStates((prev) => ({ ...prev, [propertyKey]: newScope }));
+
     if (propertyKey === "teacherScope" && subject) {
       // Ensure we're dealing with arrays
       const ensureArray = (value: string | string[] | undefined): string[] => {
@@ -229,6 +238,33 @@ export function SlotsPanel() {
         ...prev,
         teachers: teacherOptions,
       }));
+    }
+
+    // Appliquer les changements quand on change le scope de l'image
+    if (
+      propertyKey === "imageScope" &&
+      newScope &&
+      subject &&
+      selectedSlotForPanel &&
+      formState.imagePosition
+    ) {
+      // Si on passe à "appliquer partout", on applique immédiatement la position actuelle
+      const positionToApply =
+        formState.imagePosition === "left" ||
+        formState.imagePosition === "right"
+          ? formState.imagePosition
+          : "left";
+
+      updateSubject(subject.id, {
+        imagePosition: positionToApply,
+      });
+
+      // Appliquer aussi l'image pour synchroniser les deux
+      if (formState.image) {
+        updateSubject(subject.id, {
+          image: formState.image,
+        });
+      }
     }
   };
 
@@ -288,17 +324,11 @@ export function SlotsPanel() {
       case "imagePosition":
         if (scopeStates.imagePositionScope)
           updateSubject(subject.id, {
-            imagePosition: formState.imagePosition as
-              | "left"
-              | "right"
-              | "background",
+            imagePosition: formState.imagePosition as "left" | "right",
           });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
-            overrideImagePosition: formState.imagePosition as
-              | "left"
-              | "right"
-              | "background",
+            overrideImagePosition: formState.imagePosition as "left" | "right",
             subjectId,
           });
         break;
@@ -466,13 +496,30 @@ export function SlotsPanel() {
         <div className="space-y-2">
           <Label htmlFor="imagePosition">Position de l&apos;image</Label>
           <RadioGroup
-            value={formState.imagePosition || "background"}
-            onValueChange={(value) =>
-              handleInputChange(
-                "imagePosition",
-                value as "left" | "right" | "background"
-              )
-            }
+            value={formState.imagePosition || "left"}
+            onValueChange={(value) => {
+              const newPosition = value as "left" | "right";
+              handleInputChange("imagePosition", newPosition);
+
+              // Auto-save when changing position
+              if (selectedSlotForPanel && subject && entry) {
+                const { day, timeSlotIndex } = selectedSlotForPanel;
+                const subjectId = subject.id;
+
+                if (scopeStates.imageScope) {
+                  // Si le switch de l'image est sur "appliquer partout", on applique la position partout aussi
+                  updateSubject(subject.id, {
+                    imagePosition: newPosition,
+                  });
+                } else {
+                  // Sinon on applique juste pour ce créneau
+                  updateSubEntry(day, timeSlotIndex, currentWeekType, {
+                    overrideImagePosition: newPosition,
+                    subjectId,
+                  });
+                }
+              }
+            }}
             className="flex space-x-4"
           >
             <div className="flex items-center space-x-2">
@@ -483,32 +530,7 @@ export function SlotsPanel() {
               <RadioGroupItem value="right" id="image-right" />
               <Label htmlFor="image-right">Droite</Label>
             </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="background" id="image-background" />
-              <Label htmlFor="image-background">Arrière-plan</Label>
-            </div>
           </RadioGroup>
-
-          <div className="flex items-center space-x-2 mt-2">
-            <Button onClick={() => handleSubmit("imagePosition")} size="sm">
-              Save
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-2 mt-2">
-            <Switch
-              id="imagePosition-scope"
-              checked={scopeStates.imagePositionScope}
-              onCheckedChange={(checked) =>
-                handleScopeChange("imagePositionScope", checked)
-              }
-            />
-            <Label htmlFor="imagePosition-scope" className="text-xs">
-              {scopeStates.imagePositionScope
-                ? "Appliquer partout"
-                : "Appliquer juste ici"}
-            </Label>
-          </div>
         </div>
       </div>
     );
