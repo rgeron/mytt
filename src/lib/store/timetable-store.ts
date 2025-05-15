@@ -18,14 +18,14 @@ export type Subject = {
   icon?: string;
   abbreviation?: string;
   image?: string;
-  teacherOrCoach?: string;
+  teacherOrCoach?: string[];
 };
 
 // New type for a sub-entry within a week
 export type TimetableSubEntry = {
   subjectId: string;
   room?: string;
-  teacher?: string;
+  teachers?: string[];
   notes?: string;
   overrideColor?: string;
   overrideIcon?: string;
@@ -117,6 +117,7 @@ const defaultSubjects: Subject[] = [
     color: "#FF5733",
     subjectType: "school",
     abbreviation: "Maths",
+    teacherOrCoach: ["M. Pythagore", "Mme. Euclide"],
   },
   {
     id: uuidv4(),
@@ -124,6 +125,7 @@ const defaultSubjects: Subject[] = [
     color: "#33CFFF",
     subjectType: "school",
     abbreviation: "Français",
+    teacherOrCoach: ["Mme. Hugo", "M. Balzac"],
   },
   {
     id: uuidv4(),
@@ -220,7 +222,7 @@ const defaultSubjects: Subject[] = [
     color: "#000000",
     subjectType: "extracurricular",
     icon: "🎹",
-    teacherOrCoach: "Mme. Notes",
+    teacherOrCoach: ["Mme. Notes"],
   },
   {
     id: uuidv4(),

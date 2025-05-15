@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  MultipleSelector,
+  type Option,
+} from "@/components/ui/multiple-selector";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -27,7 +31,7 @@ type EditableProperty =
   | "color"
   | "icon"
   | "abbreviation"
-  | "teacherInput"
+  | "teachers"
   | "image"
   | "room";
 
@@ -35,11 +39,11 @@ interface FormFields {
   color?: string;
   icon?: string;
   abbreviation?: string;
-  teacherInput?: string;
+  teachers?: Option[];
   image?: string;
   room?: string;
-  subjectTeacherOrCoach?: string;
-  subEntryTeacher?: string;
+  subjectTeacherOrCoach?: string[];
+  subEntryTeachers?: string[];
 }
 
 interface ScopeStates {
@@ -106,6 +110,21 @@ export function SlotsPanel() {
 
   useEffect(() => {
     if (subject) {
+      // Handle legacy data where teacherOrCoach or teachers might be strings
+      const ensureArray = (value: string | string[] | undefined): string[] => {
+        if (!value) return [];
+        return Array.isArray(value) ? value : [value];
+      };
+
+      const teacherOptions = (
+        scopeStates.teacherScope
+          ? ensureArray(subject.teacherOrCoach)
+          : ensureArray(subEntryForCurrentWeek?.teachers)
+      ).map((teacher) => ({
+        value: teacher,
+        label: teacher,
+      }));
+
       const newFormState: FormFields = {
         color: subEntryForCurrentWeek?.overrideColor || subject.color || "",
         icon: subEntryForCurrentWeek?.overrideIcon || subject.icon || "",
@@ -115,12 +134,9 @@ export function SlotsPanel() {
           "",
         image: subEntryForCurrentWeek?.overrideImage || subject.image || "",
         room: subEntryForCurrentWeek?.room || "",
-        teacherInput:
-          scopeStates.teacherScope === true
-            ? subject.teacherOrCoach || ""
-            : subEntryForCurrentWeek?.teacher || "",
-        subjectTeacherOrCoach: subject.teacherOrCoach,
-        subEntryTeacher: subEntryForCurrentWeek?.teacher,
+        teachers: teacherOptions,
+        subjectTeacherOrCoach: ensureArray(subject.teacherOrCoach),
+        subEntryTeachers: ensureArray(subEntryForCurrentWeek?.teachers),
       };
       setFormState(newFormState);
     } else {
@@ -145,12 +161,24 @@ export function SlotsPanel() {
 
   const handleInputChange = (field: keyof FormFields, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
-    if (field === "teacherInput") {
-      if (scopeStates.teacherScope === true) {
-        setFormState((prev) => ({ ...prev, subjectTeacherOrCoach: value }));
-      } else {
-        setFormState((prev) => ({ ...prev, subEntryTeacher: value }));
-      }
+  };
+
+  const handleTeachersChange = (options: Option[]) => {
+    setFormState((prev) => ({
+      ...prev,
+      teachers: options,
+    }));
+
+    if (scopeStates.teacherScope) {
+      setFormState((prev) => ({
+        ...prev,
+        subjectTeacherOrCoach: options.map((opt) => opt.value),
+      }));
+    } else {
+      setFormState((prev) => ({
+        ...prev,
+        subEntryTeachers: options.map((opt) => opt.value),
+      }));
     }
   };
 
@@ -160,12 +188,24 @@ export function SlotsPanel() {
   ) => {
     setScopeStates((prev) => ({ ...prev, [propertyKey]: newScope }));
     if (propertyKey === "teacherScope" && subject) {
+      // Ensure we're dealing with arrays
+      const ensureArray = (value: string | string[] | undefined): string[] => {
+        if (!value) return [];
+        return Array.isArray(value) ? value : [value];
+      };
+
+      const teacherOptions = (
+        newScope
+          ? ensureArray(subject.teacherOrCoach)
+          : ensureArray(subEntryForCurrentWeek?.teachers)
+      ).map((teacher) => ({
+        value: teacher,
+        label: teacher,
+      }));
+
       setFormState((prev) => ({
         ...prev,
-        teacherInput:
-          newScope === true
-            ? subject.teacherOrCoach || ""
-            : subEntryForCurrentWeek?.teacher || "",
+        teachers: teacherOptions,
       }));
     }
   };
@@ -173,55 +213,59 @@ export function SlotsPanel() {
   const handleSubmit = (property: EditableProperty) => {
     if (!selectedSlotForPanel || !subject || !entry) return;
     const { day, timeSlotIndex } = selectedSlotForPanel;
-    const value = formState[property as keyof FormFields];
     const subjectId = subject.id;
 
     switch (property) {
       case "color":
-        if (scopeStates.colorScope) updateSubject(subject.id, { color: value });
+        if (scopeStates.colorScope)
+          updateSubject(subject.id, { color: formState.color });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
-            overrideColor: value,
+            overrideColor: formState.color,
             subjectId,
           });
         break;
       case "icon":
-        if (scopeStates.iconScope) updateSubject(subject.id, { icon: value });
+        if (scopeStates.iconScope)
+          updateSubject(subject.id, { icon: formState.icon });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
-            overrideIcon: value,
+            overrideIcon: formState.icon,
             subjectId,
           });
         break;
       case "abbreviation":
         if (scopeStates.abbreviationScope)
-          updateSubject(subject.id, { abbreviation: value });
+          updateSubject(subject.id, { abbreviation: formState.abbreviation });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
-            overrideAbbreviation: value,
+            overrideAbbreviation: formState.abbreviation,
             subjectId,
           });
         break;
-      case "teacherInput":
+      case "teachers":
         if (scopeStates.teacherScope)
-          updateSubject(subject.id, { teacherOrCoach: formState.teacherInput });
+          updateSubject(subject.id, {
+            teacherOrCoach: formState.subjectTeacherOrCoach,
+          });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
-            teacher: formState.teacherInput,
+            teachers: formState.subEntryTeachers,
             subjectId,
           });
         break;
       case "image":
-        if (scopeStates.imageScope) updateSubject(subject.id, { image: value });
+        if (scopeStates.imageScope)
+          updateSubject(subject.id, { image: formState.image });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
-            overrideImage: value,
+            overrideImage: formState.image,
             subjectId,
           });
         break;
       case "room":
         updateSubEntry(day, timeSlotIndex, currentWeekType, {
-          room: value,
+          room: formState.room,
           subjectId,
         });
         break;
@@ -232,13 +276,11 @@ export function SlotsPanel() {
 
   const renderPropertyEditor = (
     label: string,
-    formField: keyof FormFields,
+    formField: keyof Omit<FormFields, "teachers">,
     editableProperty: EditableProperty,
     inputType: string = "text"
   ) => {
-    const scopeKey = `${
-      editableProperty === "teacherInput" ? "teacher" : editableProperty
-    }Scope` as keyof ScopeStates;
+    const scopeKey = `${editableProperty}Scope` as keyof ScopeStates;
     const currentScope =
       editableProperty === "room" ? false : scopeStates[scopeKey];
 
@@ -278,6 +320,46 @@ export function SlotsPanel() {
     );
   };
 
+  const renderTeachersEditor = () => {
+    const scopeKey = "teacherScope";
+    const currentScope = scopeStates[scopeKey];
+
+    return (
+      <div className="space-y-2">
+        <Label htmlFor="teachers">Prof./Coach</Label>
+        <div className="flex items-center space-x-2">
+          <div className="flex-grow">
+            <MultipleSelector
+              value={formState.teachers || []}
+              onChange={handleTeachersChange}
+              placeholder="Sélectionner ou ajouter"
+              className="w-full"
+              creatable={true}
+            />
+          </div>
+          <Button onClick={() => handleSubmit("teachers")} size="sm">
+            Save
+          </Button>
+        </div>
+        <div className="flex items-center space-x-2 mt-2">
+          <Switch
+            id="teachers-scope"
+            checked={currentScope}
+            onCheckedChange={(checked) =>
+              handleScopeChange(
+                scopeKey as keyof Omit<ScopeStates, "roomScope">,
+                checked
+              )
+            }
+          />
+          <Label htmlFor="teachers-scope" className="text-xs">
+            {currentScope ? "Appliquer partout" : "Appliquer juste ici"}
+          </Label>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -300,11 +382,7 @@ export function SlotsPanel() {
               "abbreviation",
               "abbreviation"
             )}
-            {renderPropertyEditor(
-              "Prof./Coach",
-              "teacherInput",
-              "teacherInput"
-            )}
+            {renderTeachersEditor()}
             {renderPropertyEditor("Image (URL)", "image", "image")}
             {renderPropertyEditor("Salle", "room", "room")}
           </>

@@ -61,6 +61,12 @@ export function TimetablePreview() {
     return timeSlotDurations.reduce((sum, duration) => sum + duration, 0);
   }, [timeSlotDurations]);
 
+  // Helper to ensure values are arrays
+  const ensureArray = (value: string | string[] | undefined): string[] => {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+  };
+
   // Parse time string (HH:MM) to minutes since midnight
   function parseTimeToMinutes(timeString: string): number {
     const [hours, minutes] = timeString.split(":").map(Number);
@@ -489,7 +495,8 @@ export function TimetablePreview() {
 
                               // Calculate content density to adjust display
                               const hasRoom = !!subEntry.room;
-                              const hasTeacher = !!subEntry.teacher;
+                              const hasTeacher =
+                                ensureArray(subEntry.teachers).length > 0;
                               const hasIcon = !!stripEffectiveIcon;
                               const hasImage = !!stripEffectiveImage;
                               const contentDensity = [
@@ -590,7 +597,9 @@ export function TimetablePreview() {
                                           <span className="font-medium">
                                             P:
                                           </span>{" "}
-                                          {subEntry.teacher}
+                                          {ensureArray(subEntry.teachers).join(
+                                            ", "
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -645,12 +654,19 @@ export function TimetablePreview() {
                                     {subEntryToDisplay.room}
                                   </div>
                                 )}
-                                {subEntryToDisplay?.teacher && (
-                                  <div className="text-[8px] text-muted-foreground truncate">
-                                    <span className="font-medium">P:</span>{" "}
-                                    {subEntryToDisplay.teacher}
-                                  </div>
-                                )}
+                                {Array.isArray(subEntryToDisplay?.teachers)
+                                  ? subEntryToDisplay.teachers.length > 0 && (
+                                      <div className="text-[8px] text-muted-foreground truncate">
+                                        <span className="font-medium">P:</span>{" "}
+                                        {subEntryToDisplay.teachers.join(", ")}
+                                      </div>
+                                    )
+                                  : subEntryToDisplay?.teachers && (
+                                      <div className="text-[8px] text-muted-foreground truncate">
+                                        <span className="font-medium">P:</span>{" "}
+                                        {subEntryToDisplay.teachers}
+                                      </div>
+                                    )}
                               </div>
                             )}
                           </div>
