@@ -9,11 +9,20 @@ import {
 } from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
 import { InfoIcon, Trash2Icon } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ConflictResolutionDialog,
   type ConflictResolutionAction,
 } from "./dialogs/ConflictResolutionDialog";
+
+interface DayDisplayCell {
+  timeIndex: number; // Starting time slot index of this display cell
+  span: number; // Number of actual time slots this display cell covers
+  subjectToDisplay: Subject | null;
+  subEntryToDisplay: TimetableSubEntry | undefined; // Contains room, teacher for the first slot
+  currentFullEntry: TimetableEntry | undefined; // Full entry object for the first slot of the span
+  isMerged: boolean;
+}
 
 export function TimetablePreview() {
   const {
@@ -57,37 +66,43 @@ export function TimetablePreview() {
   }
 
   // Function to find an entry for a specific day and time slot
-  const findEntryForSlot = (
-    day: number,
-    timeSlotIndex: number
-  ): TimetableEntry | undefined => {
-    return entries.find(
-      (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
-    );
-  };
+  const findEntryForSlotCb = useCallback(
+    (day: number, timeSlotIndex: number): TimetableEntry | undefined => {
+      return entries.find(
+        (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
+      );
+    },
+    [entries]
+  );
 
   // Function to find a subject by ID
-  const findSubject = (subjectId: string): Subject | undefined => {
-    return subjects.find((subject) => subject.id === subjectId);
-  };
+  const findSubjectCb = useCallback(
+    (subjectId: string): Subject | undefined => {
+      return subjects.find((subject) => subject.id === subjectId);
+    },
+    [subjects]
+  );
 
-  const getSubEntryForWeek = (
-    entry: TimetableEntry | undefined,
-    week: WeekDesignation
-  ): TimetableSubEntry | undefined => {
-    if (!entry) return undefined;
-    const weekKey = `week${week.toUpperCase()}` as keyof Pick<
-      TimetableEntry,
-      "weekA" | "weekB" | "weekC"
-    >;
-    return entry[weekKey];
-  };
+  const getSubEntryForWeek = useCallback(
+    (
+      entry: TimetableEntry | undefined,
+      week: WeekDesignation
+    ): TimetableSubEntry | undefined => {
+      if (!entry) return undefined;
+      const weekKey = `week${week.toUpperCase()}` as keyof Pick<
+        TimetableEntry,
+        "weekA" | "weekB" | "weekC"
+      >;
+      return entry[weekKey];
+    },
+    [] // No dependencies from component scope, relies only on arguments
+  );
 
   const handleCellClick = (dayIndex: number, timeSlotIndex: number) => {
     if (!selectedActivityId) return;
 
-    const existingEntry = findEntryForSlot(dayIndex, timeSlotIndex);
-    const newSubject = findSubject(selectedActivityId);
+    const existingEntry = findEntryForSlotCb(dayIndex, timeSlotIndex); // Use callback version
+    const newSubject = findSubjectCb(selectedActivityId); // Use callback version
     if (!newSubject) return;
 
     const newSubEntryData: TimetableSubEntry = {
@@ -173,14 +188,18 @@ export function TimetablePreview() {
   const handleRemoveFullEntry = (
     e: React.MouseEvent,
     dayIndex: number,
-    timeSlotIndex: number
+    startTimeSlotIndex: number,
+    span: number = 1
   ) => {
     e.stopPropagation();
-    const entry = findEntryForSlot(dayIndex, timeSlotIndex);
-    if (entry) {
-      if (entry.weekA) removeSubEntry(dayIndex, timeSlotIndex, "a");
-      if (entry.weekB) removeSubEntry(dayIndex, timeSlotIndex, "b");
-      if (entry.weekC) removeSubEntry(dayIndex, timeSlotIndex, "c");
+    for (let i = 0; i < span; i++) {
+      const currentTimeSlotIndex = startTimeSlotIndex + i;
+      const entry = findEntryForSlotCb(dayIndex, currentTimeSlotIndex); // Use callback version
+      if (entry) {
+        if (entry.weekA) removeSubEntry(dayIndex, currentTimeSlotIndex, "a");
+        if (entry.weekB) removeSubEntry(dayIndex, currentTimeSlotIndex, "b");
+        if (entry.weekC) removeSubEntry(dayIndex, currentTimeSlotIndex, "c");
+      }
     }
   };
 
@@ -210,6 +229,62 @@ export function TimetablePreview() {
       .join(" ");
     return `auto ${rowFractions}`;
   }, [timeSlots, timeSlotDurations, totalDayMinutes]);
+
+  const getProcessedDays = useMemo(() => {
+    return Array.from({ length: numberOfDays }).map((_, dayIndex) => {
+      const displayCells: DayDisplayCell[] = [];
+      let i = 0;
+      while (i < timeSlots.length) {
+        const firstSlotEntry = findEntryForSlotCb(dayIndex, i);
+
+        const getEffectiveSubEntry = (entry?: TimetableEntry) =>
+          getSubEntryForWeek(entry, currentWeekType) ||
+          getSubEntryForWeek(entry, "a") ||
+          getSubEntryForWeek(entry, "b") ||
+          getSubEntryForWeek(entry, "c");
+
+        const firstSubEntry = getEffectiveSubEntry(firstSlotEntry);
+        const firstSubject = firstSubEntry
+          ? findSubjectCb(firstSubEntry.subjectId) || null
+          : null;
+
+        let span = 1;
+        if (firstSubject) {
+          for (let j = i + 1; j < timeSlots.length; j++) {
+            const nextSlotEntry = findEntryForSlotCb(dayIndex, j);
+            const nextSubEntry = getEffectiveSubEntry(nextSlotEntry);
+            const nextSubject = nextSubEntry
+              ? findSubjectCb(nextSubEntry.subjectId) || null
+              : null;
+
+            if (nextSubject && nextSubject.id === firstSubject?.id) {
+              span++;
+            } else {
+              break;
+            }
+          }
+        }
+
+        displayCells.push({
+          timeIndex: i,
+          span: span,
+          subjectToDisplay: firstSubject,
+          subEntryToDisplay: firstSubEntry,
+          currentFullEntry: firstSlotEntry,
+          isMerged: span > 1,
+        });
+        i += span;
+      }
+      return displayCells;
+    });
+  }, [
+    numberOfDays,
+    timeSlots,
+    findEntryForSlotCb,
+    getSubEntryForWeek,
+    currentWeekType,
+    findSubjectCb,
+  ]);
 
   return (
     <div className="relative h-full w-full flex flex-col justify-center">
@@ -244,21 +319,25 @@ export function TimetablePreview() {
               }}
             >
               {/* Header: Time column */}
-              <div className="bg-primary text-primary-foreground py-2 px-3 text-center font-medium text-sm">
+              <div
+                className="bg-primary text-primary-foreground py-2 px-3 text-center font-medium text-sm"
+                style={{ gridColumn: 1, gridRow: 1 }}
+              >
                 Horaires
               </div>
 
               {/* Header: Day columns */}
               {displayDayNames.map((day, index) => (
                 <div
-                  key={`day-${index}`}
+                  key={`day-header-${index}`}
                   className="bg-primary text-primary-foreground py-2 px-1 text-center font-medium text-sm"
+                  style={{ gridColumn: index + 2, gridRow: 1 }}
                 >
                   {day}
                 </div>
               ))}
 
-              {/* Time slots and entries */}
+              {/* Time slot labels (Column 1) */}
               {timeSlots.map((timeSlot, timeIndex) => {
                 const slotPercentage =
                   totalDayMinutes > 0
@@ -267,126 +346,143 @@ export function TimetablePreview() {
                 const showTimeLabels = slotPercentage > 7;
 
                 return (
-                  <React.Fragment key={`slot-row-${timeIndex}`}>
-                    {/* Time slot label */}
-                    <div
-                      key={`time-${timeIndex}`}
-                      className="bg-secondary/30 text-center text-[10px] flex flex-col items-center justify-center font-medium"
-                    >
-                      {showTimeLabels && (
+                  <div
+                    key={`time-label-${timeIndex}`}
+                    className="bg-secondary/30 text-center text-[10px] flex flex-col items-center justify-center font-medium"
+                    style={{ gridColumn: 1, gridRow: timeIndex + 2 }}
+                  >
+                    {showTimeLabels && (
+                      <div>
                         <div>
-                          <div>
-                            {timeSlot.start} - {timeSlot.end}
-                          </div>
+                          {timeSlot.start} - {timeSlot.end}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Entries for each day */}
-                    {Array.from({ length: numberOfDays }).map((_, dayIndex) => {
-                      const currentFullEntry = findEntryForSlot(
-                        dayIndex,
-                        timeIndex
-                      );
-                      // For now, display subject for currentWeekType or first available if not set
-                      // Phase 3 will handle visual splitting of the cell.
-                      const subEntryToDisplay =
-                        getSubEntryForWeek(currentFullEntry, currentWeekType) ||
-                        getSubEntryForWeek(currentFullEntry, "a") ||
-                        getSubEntryForWeek(currentFullEntry, "b") ||
-                        getSubEntryForWeek(currentFullEntry, "c");
-                      const subjectToDisplay = subEntryToDisplay
-                        ? findSubject(subEntryToDisplay.subjectId)
-                        : null;
-                      const hasAnyEntry =
-                        currentFullEntry?.weekA ||
-                        currentFullEntry?.weekB ||
-                        currentFullEntry?.weekC;
-
-                      return (
-                        <div
-                          key={`cell-${dayIndex}-${timeIndex}`}
-                          className={cn(
-                            "relative bg-card border border-border overflow-hidden transition-colors cursor-pointer group",
-                            subjectToDisplay
-                              ? "hover:bg-secondary/10"
-                              : "hover:bg-muted/20"
-                          )}
-                          style={{
-                            backgroundColor: subjectToDisplay
-                              ? `${subjectToDisplay.color}20`
-                              : undefined,
-                            borderLeft: subjectToDisplay
-                              ? `4px solid ${subjectToDisplay.color}`
-                              : selectedActivityId &&
-                                findSubject(selectedActivityId) // Preview for placement
-                              ? `4px dashed ${
-                                  findSubject(selectedActivityId)?.color ||
-                                  "transparent"
-                                }`
-                              : undefined,
-                          }}
-                          onClick={() => handleCellClick(dayIndex, timeIndex)}
-                        >
-                          {subjectToDisplay && (
-                            <>
-                              <div
-                                className={cn(
-                                  "flex flex-col h-full justify-center",
-                                  showTimeLabels ? "p-2" : "p-0"
-                                )}
-                              >
-                                <div className="font-semibold text-xs text-foreground truncate">
-                                  {subjectToDisplay.name}
-                                </div>
-                                {subEntryToDisplay?.room && showTimeLabels && (
-                                  <div className="text-xs text-muted-foreground truncate mt-1">
-                                    <span className="font-medium">Salle:</span>{" "}
-                                    {subEntryToDisplay.room}
-                                  </div>
-                                )}
-                                {subEntryToDisplay?.teacher &&
-                                  showTimeLabels && (
-                                    <div className="text-xs text-muted-foreground truncate">
-                                      <span className="font-medium">Prof:</span>{" "}
-                                      {subEntryToDisplay.teacher}
-                                    </div>
-                                  )}
-                              </div>
-                              {/* Eraser for the whole slot (all weeks) */}
-                              {hasAnyEntry && (
-                                <button
-                                  title="Supprimer toutes les entrées de ce créneau"
-                                  onClick={(e) =>
-                                    handleRemoveFullEntry(
-                                      e,
-                                      dayIndex,
-                                      timeIndex
-                                    )
-                                  }
-                                  className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
-                                >
-                                  <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
-                                </button>
-                              )}
-                            </>
-                          )}
-                          {/* Display number of weeks filled or some indicator if multiple (Phase 3 detail) */}
-                          {currentFullEntry &&
-                            (currentFullEntry.weekA ||
-                              currentFullEntry.weekB ||
-                              currentFullEntry.weekC) &&
-                            !subjectToDisplay && (
-                              <div className="flex items-center justify-center h-full">
-                                <InfoIcon className="h-4 w-4 text-muted-foreground/50" />
-                              </div>
-                            )}
-                        </div>
-                      );
-                    })}
-                  </React.Fragment>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
+
+              {/* Entries for each day */}
+              {getProcessedDays.map((dayCells, dayIndex) =>
+                dayCells.map((cellData) => {
+                  let showTimeLabelsInCell = false;
+                  if (cellData.span === 1) {
+                    const slotPercentage =
+                      totalDayMinutes > 0 &&
+                      cellData.timeIndex < timeSlotDurations.length
+                        ? (timeSlotDurations[cellData.timeIndex] /
+                            totalDayMinutes) *
+                          100
+                        : 0;
+                    showTimeLabelsInCell = slotPercentage > 7;
+                  } else {
+                    let combinedDuration = 0;
+                    for (let k = 0; k < cellData.span; k++) {
+                      if (cellData.timeIndex + k < timeSlotDurations.length) {
+                        combinedDuration +=
+                          timeSlotDurations[cellData.timeIndex + k];
+                      }
+                    }
+                    const slotPercentage =
+                      totalDayMinutes > 0
+                        ? (combinedDuration / totalDayMinutes) * 100
+                        : 0;
+                    showTimeLabelsInCell = slotPercentage > 3; // Lower threshold for taller merged cells
+                  }
+
+                  const { subjectToDisplay, subEntryToDisplay } = cellData;
+                  const hasAnyEntryInFirstSlot =
+                    cellData.currentFullEntry?.weekA ||
+                    cellData.currentFullEntry?.weekB ||
+                    cellData.currentFullEntry?.weekC;
+
+                  return (
+                    <div
+                      key={`cell-${dayIndex}-${cellData.timeIndex}`}
+                      className={cn(
+                        "relative bg-card border border-border overflow-hidden transition-colors cursor-pointer group",
+                        subjectToDisplay
+                          ? "hover:bg-secondary/10"
+                          : "hover:bg-muted/20"
+                      )}
+                      style={{
+                        gridColumn: dayIndex + 2,
+                        gridRowStart: cellData.timeIndex + 2,
+                        gridRowEnd: `span ${cellData.span}`,
+                        backgroundColor: subjectToDisplay
+                          ? `${subjectToDisplay.color}20`
+                          : undefined,
+                        borderLeft: subjectToDisplay
+                          ? `4px solid ${subjectToDisplay.color}`
+                          : selectedActivityId &&
+                            findSubjectCb(selectedActivityId) // Use callback version
+                          ? `4px dashed ${
+                              findSubjectCb(selectedActivityId)?.color || // Use callback version
+                              "transparent"
+                            }`
+                          : undefined,
+                      }}
+                      onClick={() =>
+                        handleCellClick(dayIndex, cellData.timeIndex)
+                      }
+                    >
+                      {subjectToDisplay && (
+                        <>
+                          <div
+                            className={cn(
+                              "flex flex-col h-full justify-center",
+                              showTimeLabelsInCell ? "p-2" : "p-0 text-center"
+                            )}
+                          >
+                            <div className="font-semibold text-xs text-foreground truncate">
+                              {subjectToDisplay.name}
+                            </div>
+                            {subEntryToDisplay?.room &&
+                              showTimeLabelsInCell && (
+                                <div className="text-xs text-muted-foreground truncate mt-1">
+                                  <span className="font-medium">Salle:</span>{" "}
+                                  {subEntryToDisplay.room}
+                                </div>
+                              )}
+                            {subEntryToDisplay?.teacher &&
+                              showTimeLabelsInCell && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  <span className="font-medium">Prof:</span>{" "}
+                                  {subEntryToDisplay.teacher}
+                                </div>
+                              )}
+                          </div>
+                          {hasAnyEntryInFirstSlot && (
+                            <button
+                              title="Supprimer toutes les entrées de ce créneau"
+                              onClick={(e) =>
+                                handleRemoveFullEntry(
+                                  e,
+                                  dayIndex,
+                                  cellData.timeIndex,
+                                  cellData.span
+                                )
+                              }
+                              className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
+                            >
+                              <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {cellData.currentFullEntry &&
+                        (cellData.currentFullEntry.weekA ||
+                          cellData.currentFullEntry.weekB ||
+                          cellData.currentFullEntry.weekC) &&
+                        !subjectToDisplay && (
+                          <div className="flex items-center justify-center h-full">
+                            <InfoIcon className="h-4 w-4 text-muted-foreground/50" />
+                          </div>
+                        )}
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -408,7 +504,7 @@ export function TimetablePreview() {
               }
             : null
         }
-        findSubject={findSubject} // Pass findSubject function
+        findSubject={findSubjectCb} // Pass callback version
         onResolve={handleConflictResolution} // Pass the resolver function
       />
     </div>
