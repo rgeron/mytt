@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   CheckCircleIcon,
+  EraserIcon,
   PlusCircleIcon,
   SearchIcon,
   XIcon,
@@ -255,32 +256,67 @@ function ActivitySearchPopover({
 }
 
 export function SubjectsPanel() {
-  const { selectedActivityId, subjects, setSelectedActivityId } =
-    useTimetableStore();
-  const currentSelectedSubjectDetails = useMemo(
-    () => subjects.find((s) => s.id === selectedActivityId),
-    [subjects, selectedActivityId]
-  );
+  const {
+    selectedActivityId,
+    subjects,
+    setSelectedActivityId,
+    isEraserModeActive,
+    toggleEraserMode,
+  } = useTimetableStore();
+
+  const currentSelectedSubjectDetails = useMemo(() => {
+    if (isEraserModeActive) {
+      return {
+        id: "eraser-mode-active",
+        name: "Mode Effaceur Actif",
+        subjectType: "tool" as const,
+        color: "#757575",
+      };
+    }
+    return subjects.find((s) => s.id === selectedActivityId);
+  }, [subjects, selectedActivityId, isEraserModeActive]);
 
   useEffect(() => {
-    // When the SubjectsPanel becomes active (mounts),
-    // clear any previously selected activity.
-    // This ensures that an activity must be explicitly chosen within this panel session.
-    setSelectedActivityId(null);
+    // This effect runs on mount and when setSelectedActivityId/toggleEraserMode references change (they shouldn't often)
 
-    // When the SubjectsPanel becomes inactive (unmounts, i.e., user switches tabs),
-    // clear the selected activity. This enforces that timetable filling
-    // can only occur when the SubjectsPanel is the active context.
-    return () => {
+    // Ensure selectedActivityId is null
+    if (useTimetableStore.getState().selectedActivityId !== null) {
       setSelectedActivityId(null);
+    }
+
+    // Ensure eraser mode is off
+    if (useTimetableStore.getState().isEraserModeActive) {
+      toggleEraserMode();
+    }
+
+    return () => {
+      // On unmount, perform similar cleanup
+      if (useTimetableStore.getState().selectedActivityId !== null) {
+        setSelectedActivityId(null);
+      }
+      if (useTimetableStore.getState().isEraserModeActive) {
+        toggleEraserMode();
+      }
     };
-  }, [setSelectedActivityId]);
+  }, [setSelectedActivityId, toggleEraserMode]); // Dependencies are stable store actions
 
   return (
     <div className="flex flex-col gap-4 h-full">
       <h3 className="text-lg font-semibold leading-none tracking-tight px-1">
-        Sélectionner une Activité
+        Sélectionner une Activité ou Outil
       </h3>
+
+      <Button
+        variant={isEraserModeActive ? "secondary" : "outline"}
+        onClick={toggleEraserMode}
+        className="w-full justify-start h-auto p-1.5 text-sm font-normal flex items-center gap-2"
+      >
+        <EraserIcon className="mr-1.5 h-4 w-4 text-muted-foreground" />
+        Mode Effaceur
+        {isEraserModeActive && (
+          <CheckCircleIcon className="ml-auto h-4 w-4 text-primary shrink-0" />
+        )}
+      </Button>
 
       <ActivitySearchPopover
         subjectType="school"
@@ -315,13 +351,27 @@ export function SubjectsPanel() {
               <div className="font-medium text-sm text-foreground">
                 {currentSelectedSubjectDetails.name}
               </div>
-              <div className="text-xs text-muted-foreground">
-                {subjectTypeLabels[currentSelectedSubjectDetails.subjectType]}
-                {currentSelectedSubjectDetails.abbreviation &&
-                  ` (${currentSelectedSubjectDetails.abbreviation})`}
-                {currentSelectedSubjectDetails.teacherOrCoach &&
-                  ` - ${currentSelectedSubjectDetails.teacherOrCoach}`}
-              </div>
+              {currentSelectedSubjectDetails.subjectType !== "tool" && (
+                <div className="text-xs text-muted-foreground">
+                  {
+                    subjectTypeLabels[
+                      currentSelectedSubjectDetails.subjectType as SubjectType
+                    ]
+                  }
+                  {(currentSelectedSubjectDetails as SubjectFromStore)
+                    .abbreviation &&
+                    ` (${
+                      (currentSelectedSubjectDetails as SubjectFromStore)
+                        .abbreviation
+                    })`}
+                  {(currentSelectedSubjectDetails as SubjectFromStore)
+                    .teacherOrCoach &&
+                    ` - ${
+                      (currentSelectedSubjectDetails as SubjectFromStore)
+                        .teacherOrCoach
+                    }`}
+                </div>
+              )}
             </div>
             <Button
               variant="ghost"

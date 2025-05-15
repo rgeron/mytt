@@ -60,6 +60,7 @@ export type TimetableState = {
   showSaturday: boolean;
   selectedActivityId: string | null;
   selectedSlotForPanel: SelectedSlotInfo | null; // Added for the slots panel
+  isEraserModeActive: boolean; // <-- New state for eraser mode
 
   // Actions
   setTitle: (title: string) => void;
@@ -91,6 +92,7 @@ export type TimetableState = {
   setShowSaturday: (show: boolean) => void;
   setSelectedActivityId: (id: string | null) => void;
   setSelectedSlotForPanel: (slotInfo: SelectedSlotInfo | null) => void; // Added setter
+  toggleEraserMode: () => void; // <-- New action for eraser mode
   reset: () => void;
 };
 
@@ -312,6 +314,7 @@ const initialState = {
   showSaturday: false,
   selectedActivityId: null,
   selectedSlotForPanel: null, // Added initial state for selectedSlotForPanel
+  isEraserModeActive: false, // <-- Initialize new state
 };
 
 export const useTimetableStore = create<TimetableState>()(
@@ -429,8 +432,21 @@ export const useTimetableStore = create<TimetableState>()(
       setCurrentWeekType: (currentWeekType) => set({ currentWeekType }),
       setShowSaturday: (showSaturday) => set({ showSaturday }),
       setSelectedActivityId: (id) => set({ selectedActivityId: id }),
-      setSelectedSlotForPanel: (selectedSlotForPanel) =>
-        set({ selectedSlotForPanel }), // Added setter implementation
+      setSelectedSlotForPanel: (slotInfo) =>
+        set({ selectedSlotForPanel: slotInfo }),
+
+      toggleEraserMode: () =>
+        set((state) => {
+          const newEraserModeState = !state.isEraserModeActive;
+          return {
+            isEraserModeActive: newEraserModeState,
+            // If eraser mode is activated, deselect any active subject
+            selectedActivityId: newEraserModeState
+              ? null
+              : state.selectedActivityId,
+          };
+        }),
+
       reset: () => set({ ...initialState, entries: [] }), // Ensure entries are reset correctly
     }),
     {

@@ -8,7 +8,7 @@ import {
   type WeekDesignation,
 } from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
-import { InfoIcon, Trash2Icon } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ConflictResolutionDialog,
@@ -37,6 +37,7 @@ export function TimetablePreview() {
     removeSubEntry,
     currentWeekType,
     setSelectedSlotForPanel,
+    isEraserModeActive,
   } = useTimetableStore();
 
   const [conflictDialogState, setConflictDialogState] = useState<{
@@ -103,6 +104,18 @@ export function TimetablePreview() {
     // Always set the selected slot for the panel first
     setSelectedSlotForPanel({ day: dayIndex, timeSlotIndex });
 
+    // Eraser Mode: If eraser is active, clear the slot and return.
+    if (isEraserModeActive) {
+      const entry = findEntryForSlotCb(dayIndex, timeSlotIndex);
+      if (entry) {
+        if (entry.weekA) removeSubEntry(dayIndex, timeSlotIndex, "a");
+        if (entry.weekB) removeSubEntry(dayIndex, timeSlotIndex, "b");
+        if (entry.weekC) removeSubEntry(dayIndex, timeSlotIndex, "c");
+      }
+      return; // Exit after erasing
+    }
+
+    // If not in eraser mode, and no activity is selected from the panel, do nothing.
     if (!selectedActivityId) return;
 
     const existingEntry = findEntryForSlotCb(dayIndex, timeSlotIndex);
@@ -196,14 +209,18 @@ export function TimetablePreview() {
     span: number = 1
   ) => {
     e.stopPropagation();
-    for (let i = 0; i < span; i++) {
-      const currentTimeSlotIndex = startTimeSlotIndex + i;
-      const entry = findEntryForSlotCb(dayIndex, currentTimeSlotIndex); // Use callback version
-      if (entry) {
-        if (entry.weekA) removeSubEntry(dayIndex, currentTimeSlotIndex, "a");
-        if (entry.weekB) removeSubEntry(dayIndex, currentTimeSlotIndex, "b");
-        if (entry.weekC) removeSubEntry(dayIndex, currentTimeSlotIndex, "c");
-      }
+    // This function is no longer directly called by a button in the cell.
+    // Its logic is now incorporated into handleCellClick when eraser is active.
+    // Keeping the function signature in case it's useful for other bulk operations later,
+    // but for now, direct eraser click handles individual slots.
+    // For multi-span cells, eraser will clear the first slot of the span.
+    // To clear a full merged entry, user would click the first slot of that merged block.
+    const currentTimeSlotIndex = startTimeSlotIndex; // We target only the clicked slot part of a span
+    const entry = findEntryForSlotCb(dayIndex, currentTimeSlotIndex);
+    if (entry) {
+      if (entry.weekA) removeSubEntry(dayIndex, currentTimeSlotIndex, "a");
+      if (entry.weekB) removeSubEntry(dayIndex, currentTimeSlotIndex, "b");
+      if (entry.weekC) removeSubEntry(dayIndex, currentTimeSlotIndex, "c");
     }
   };
 
@@ -550,8 +567,8 @@ export function TimetablePreview() {
                         </div>
                       ) : null}
 
-                      {/* Eraser Icon: Show if there's any entry in the slot (original or multi) */}
-                      {hasAnyEntryInFirstSlot && (
+                      {/* Eraser Icon: REMOVED */}
+                      {/* {hasAnyEntryInFirstSlot && (
                         <button
                           title="Supprimer toutes les entrées de ce créneau"
                           onClick={(e) =>
@@ -566,7 +583,7 @@ export function TimetablePreview() {
                         >
                           <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
                         </button>
-                      )}
+                      )} */}
 
                       {/* Info Icon: Show if not multi-subject, no effective subject displayed, but other weeks have data */}
                       {!isMultiSubjectCell &&
