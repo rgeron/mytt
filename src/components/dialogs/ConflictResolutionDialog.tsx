@@ -15,11 +15,24 @@ import type {
   TimetableEntry,
   WeekDesignation,
 } from "@/lib/store/timetable-store";
+import { cn } from "@/lib/utils";
+import { HandIcon } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 export type ConflictResolutionAction =
   | { type: "replaceAll" }
-  | { type: "replaceSpecific"; week: WeekDesignation }
-  | { type: "addNewToWeek"; week: WeekDesignation };
+  | {
+      type: "applyStagedArrangement";
+      arrangement: {
+        a: string | null; // subjectId or null
+        b: string | null;
+        c: string | null;
+      };
+    };
+// replaceSpecific and addNewToWeek might become obsolete if all DnD changes go through applyStagedArrangement
+// For now, keeping them commented out or to be removed if fully superseded.
+// | { type: "replaceSpecific"; week: WeekDesignation }
+// | { type: "addNewToWeek"; week: WeekDesignation };
 
 export type ConflictResolutionDialogData = {
   newSubjectId: string;
@@ -34,203 +47,215 @@ export interface ConflictResolutionDialogProps {
   onResolve: (action: ConflictResolutionAction) => void;
 }
 
+interface DraggableSubjectInfo {
+  subjectId: string;
+  origin: WeekDesignation | "new"; // 'new' if it's the new subject being dragged
+}
+
+interface StagedWeeksType {
+  a: string | null; // subjectId
+  b: string | null;
+  c: string | null;
+}
+
 export function ConflictResolutionDialog(props: ConflictResolutionDialogProps) {
   const { isOpen, onOpenChange, dialogData, findSubject, onResolve } = props;
 
-  if (!dialogData) {
+  const [stagedWeeks, setStagedWeeks] = useState<StagedWeeksType>({
+    a: null,
+    b: null,
+    c: null,
+  });
+  const [draggedItemInfo, setDraggedItemInfo] =
+    useState<DraggableSubjectInfo | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState<WeekDesignation | null>(
+    null
+  );
+
+  const newSubject = dialogData ? findSubject(dialogData.newSubjectId) : null;
+
+  useEffect(() => {
+    if (dialogData?.existingEntry) {
+      setStagedWeeks({
+        a: dialogData.existingEntry.weekA?.subjectId || null,
+        b: dialogData.existingEntry.weekB?.subjectId || null,
+        c: dialogData.existingEntry.weekC?.subjectId || null,
+      });
+    } else {
+      setStagedWeeks({ a: null, b: null, c: null }); // Reset if no existing entry
+    }
+  }, [dialogData?.existingEntry, isOpen]); // Re-init when dialog opens or entry changes
+
+  if (!dialogData || !newSubject) {
     return null;
   }
 
-  const { newSubjectId, existingEntry } = dialogData;
-  const newSubjectName = findSubject(newSubjectId)?.name || "Nouvelle Activité";
+  const handleApplyChanges = () => {
+    onResolve({ type: "applyStagedArrangement", arrangement: stagedWeeks });
+    onOpenChange(false);
+  };
 
-  const occupiedWeeks: WeekDesignation[] = [];
-  if (existingEntry?.weekA) occupiedWeeks.push("a");
-  if (existingEntry?.weekB) occupiedWeeks.push("b");
-  if (existingEntry?.weekC) occupiedWeeks.push("c");
-
-  const handleResolveAndClose = (action: ConflictResolutionAction) => {
-    onResolve(action);
-    onOpenChange(false); // Ensure dialog closes after action
+  const handleReplaceAll = () => {
+    onResolve({ type: "replaceAll" }); // This action is handled by TimetablePreview to clear all and add new to week A
+    onOpenChange(false);
   };
 
   const handleCancel = () => {
     onOpenChange(false);
   };
 
-  const getButtonConfiguration = () => {
-    const buttons = [];
-
-    if (!existingEntry || occupiedWeeks.length === 0) {
-      // This case should ideally be handled before opening the dialog,
-      // but if it occurs, treat as adding to Week A.
-      buttons.push(
-        <Button
-          key="addA"
-          onClick={() =>
-            handleResolveAndClose({ type: "addNewToWeek", week: "a" })
-          }
-        >
-          Ajouter &quot;{newSubjectName}&quot; en Semaine A
-        </Button>
-      );
-    } else if (occupiedWeeks.length === 1 && existingEntry.weekA) {
-      // Only Week A is filled
-      buttons.push(
-        <Button
-          key="replaceA"
-          variant="outline"
-          onClick={() =>
-            handleResolveAndClose({ type: "replaceSpecific", week: "a" })
-          }
-        >
-          Remplacer{" "}
-          {findSubject(existingEntry.weekA.subjectId)?.name || "Sem. A"} par
-          &quot;{newSubjectName}&quot;
-        </Button>
-      );
-      buttons.push(
-        <Button
-          key="addB"
-          onClick={() =>
-            handleResolveAndClose({ type: "addNewToWeek", week: "b" })
-          }
-        >
-          Ajouter &quot;{newSubjectName}&quot; en Semaine B (A/B)
-        </Button>
-      );
-    } else if (
-      occupiedWeeks.length === 2 &&
-      existingEntry.weekA &&
-      existingEntry.weekB
-    ) {
-      // Weeks A and B are filled
-      buttons.push(
-        <Button
-          key="replaceAll"
-          variant="destructive"
-          onClick={() => handleResolveAndClose({ type: "replaceAll" })}
-        >
-          Remplacer Tout par &quot;{newSubjectName}&quot;
-        </Button>
-      );
-      buttons.push(
-        <Button
-          key="replaceA"
-          variant="outline"
-          onClick={() =>
-            handleResolveAndClose({ type: "replaceSpecific", week: "a" })
-          }
-        >
-          Remplacer{" "}
-          {findSubject(existingEntry.weekA.subjectId)?.name || "Sem. A"}
-        </Button>
-      );
-      buttons.push(
-        <Button
-          key="replaceB"
-          variant="outline"
-          onClick={() =>
-            handleResolveAndClose({ type: "replaceSpecific", week: "b" })
-          }
-        >
-          Remplacer{" "}
-          {findSubject(existingEntry.weekB.subjectId)?.name || "Sem. B"}
-        </Button>
-      );
-      buttons.push(
-        <Button
-          key="addC"
-          onClick={() =>
-            handleResolveAndClose({ type: "addNewToWeek", week: "c" })
-          }
-        >
-          Ajouter &quot;{newSubjectName}&quot; en Semaine C (A/B/C)
-        </Button>
-      );
-    } else if (occupiedWeeks.length === 3) {
-      // Weeks A, B, and C are filled
-      buttons.push(
-        <Button
-          key="replaceAll"
-          variant="destructive"
-          onClick={() => handleResolveAndClose({ type: "replaceAll" })}
-        >
-          Remplacer Tout par &quot;{newSubjectName}&quot;
-        </Button>
-      );
-      ["a", "b", "c"].forEach((week) => {
-        const subEntry =
-          existingEntry?.[`week${week.toUpperCase() as "A" | "B" | "C"}`];
-        if (subEntry) {
-          buttons.push(
-            <Button
-              key={`replace${week}`}
-              variant="outline"
-              onClick={() =>
-                handleResolveAndClose({
-                  type: "replaceSpecific",
-                  week: week as WeekDesignation,
-                })
-              }
-            >
-              Remplacer{" "}
-              {findSubject(subEntry.subjectId)?.name ||
-                `Sem. ${week.toUpperCase()}`}
-            </Button>
-          );
-        }
-      });
-    }
-    return buttons;
+  const handleDragStart = (
+    event: React.DragEvent<HTMLDivElement>,
+    subjectId: string,
+    origin: WeekDesignation | "new"
+  ) => {
+    event.dataTransfer.effectAllowed = "move";
+    // Not setting data with setData for this internal DnD, rely on component state
+    setDraggedItemInfo({ subjectId, origin });
   };
+
+  const handleDragOver = (
+    event: React.DragEvent<HTMLDivElement>,
+    week: WeekDesignation
+  ) => {
+    event.preventDefault();
+    setIsDraggingOver(week);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingOver(null);
+  };
+
+  const handleDropOnWeek = (targetWeek: WeekDesignation) => {
+    if (!draggedItemInfo) return;
+
+    const { subjectId: draggedSubjectId, origin } = draggedItemInfo;
+    const newStagedWeeks = { ...stagedWeeks };
+
+    if (origin === "new") {
+      // New subject is dropped on targetWeek
+      // Simply replaces what's in targetWeek. The original item in targetWeek is 'lost' from staging if not handled further.
+      newStagedWeeks[targetWeek] = draggedSubjectId;
+    } else {
+      // An existing subject from 'origin' week is dropped on 'targetWeek'
+      const subjectCurrentlyAtTarget = newStagedWeeks[targetWeek];
+
+      // Place dragged subject at target week
+      newStagedWeeks[targetWeek] = draggedSubjectId;
+      // Place subject that was at target week into the origin week (swap)
+      newStagedWeeks[origin] = subjectCurrentlyAtTarget;
+    }
+    setStagedWeeks(newStagedWeeks);
+    setDraggedItemInfo(null);
+    setIsDraggingOver(null);
+  };
+
+  const renderSubjectCard = (
+    subjectId: string | null,
+    weekForOrigin: WeekDesignation | "new",
+    isPlaceholder?: boolean
+  ) => {
+    if (!subjectId && !isPlaceholder) return null;
+    const subject = subjectId ? findSubject(subjectId) : null;
+    const isBeingDragged =
+      draggedItemInfo?.subjectId === subjectId &&
+      draggedItemInfo?.origin === weekForOrigin;
+
+    if (isPlaceholder) {
+      return (
+        <div className="h-full min-h-[50px] flex items-center justify-center text-xs text-muted-foreground">
+          Vide
+        </div>
+      );
+    }
+    if (!subject) return null; // Should not happen if subjectId is valid
+
+    return (
+      <div
+        draggable="true"
+        onDragStart={(e) => handleDragStart(e, subject.id, weekForOrigin)}
+        className={cn(
+          "p-2.5 border rounded-md flex items-center gap-2 cursor-grab active:cursor-grabbing w-full",
+          isBeingDragged
+            ? "opacity-50 ring-2 ring-primary"
+            : "bg-card hover:shadow-md",
+          weekForOrigin === "new" ? "bg-primary/10" : "bg-background"
+        )}
+        style={{
+          borderColor: subject.color,
+          borderLeftWidth: "4px",
+        }}
+      >
+        <HandIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span
+          style={{ backgroundColor: subject.color }}
+          className="h-4 w-4 rounded-full shrink-0 border border-background/50"
+        ></span>
+        <div className="font-medium text-sm text-foreground truncate">
+          {subject.name}
+        </div>
+      </div>
+    );
+  };
+
+  const weekLabels: WeekDesignation[] = ["a", "b", "c"];
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-2xl">
         <AlertDialogHeader>
-          <AlertDialogTitle>Conflit d&apos;activité</AlertDialogTitle>
+          <AlertDialogTitle>Organiser les activités</AlertDialogTitle>
           <AlertDialogDescription>
-            Le créneau contient déjà une ou plusieurs activités.
-            {existingEntry && (
-              <div className="mt-2 text-xs space-y-0.5">
-                <div>Actuellement:</div>
-                {existingEntry.weekA && (
-                  <li>
-                    Sem. A:{" "}
-                    {findSubject(existingEntry.weekA.subjectId)?.name ||
-                      "Activité inconnue"}
-                  </li>
-                )}
-                {existingEntry.weekB && (
-                  <li>
-                    Sem. B:{" "}
-                    {findSubject(existingEntry.weekB.subjectId)?.name ||
-                      "Activité inconnue"}
-                  </li>
-                )}
-                {existingEntry.weekC && (
-                  <li>
-                    Sem. C:{" "}
-                    {findSubject(existingEntry.weekC.subjectId)?.name ||
-                      "Activité inconnue"}
-                  </li>
-                )}
-              </div>
-            )}
-            <div className="mt-2 text-xs">
-              Nouvelle activité: <strong>{newSubjectName}</strong>
-            </div>
-            Que souhaitez-vous faire ?
+            Faites glisser les activités pour les assigner ou les intervertir
+            entre les semaines A, B, et C.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex flex-col sm:flex-col-reverse md:flex-row gap-2 items-center">
+
+        <div className="my-4 space-y-3">
+          <p className="text-sm font-medium">Nouvelle activité à placer :</p>
+          {renderSubjectCard(newSubject.id, "new")}
+        </div>
+
+        <div className="my-6">
+          <div className="grid grid-cols-3 gap-x-3">
+            {weekLabels.map((week) => (
+              <div key={week} className="flex flex-col items-center">
+                <div className="p-1 mb-1.5 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                  Semaine {week.toUpperCase()}
+                </div>
+                <div
+                  onDragOver={(e) => handleDragOver(e, week)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={() => handleDropOnWeek(week)}
+                  className={cn(
+                    "w-full p-2 border rounded-md min-h-[80px] flex flex-col items-center justify-center transition-colors",
+                    isDraggingOver === week
+                      ? "border-primary bg-primary/10 ring-2 ring-primary"
+                      : "border-dashed bg-muted/30 hover:border-muted-foreground/50"
+                  )}
+                >
+                  {
+                    stagedWeeks[week]
+                      ? renderSubjectCard(stagedWeeks[week], week)
+                      : renderSubjectCard(null, week, true) // Placeholder for empty
+                  }
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <AlertDialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-4 border-t mt-2">
           <AlertDialogCancel onClick={handleCancel}>Annuler</AlertDialogCancel>
-          {getButtonConfiguration().map((button, index) => (
-            <div key={index} className="w-full md:w-auto">
-              {button}
-            </div>
-          ))}
+          <Button variant="destructive" onClick={handleReplaceAll}>
+            Tout Remplacer par &quot;{newSubject.name}&quot;
+          </Button>
+          <Button
+            onClick={handleApplyChanges}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Appliquer les modifications
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

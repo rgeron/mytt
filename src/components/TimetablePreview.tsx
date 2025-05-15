@@ -129,31 +129,42 @@ export function TimetablePreview() {
 
   const handleConflictResolution = (action: ConflictResolutionAction) => {
     if (!conflictDialogState) return;
-    const { dayIndex, timeSlotIndex, newSubjectId } = conflictDialogState;
-    const newSubEntryData: TimetableSubEntry = { subjectId: newSubjectId };
+    const { dayIndex, timeSlotIndex, newSubjectId, existingEntry } =
+      conflictDialogState;
+    const newSubEntryData: TimetableSubEntry = { subjectId: newSubjectId }; // Used for replaceAll
 
     switch (action.type) {
       case "replaceAll":
-        // Remove all existing sub-entries for this slot
-        if (conflictDialogState.existingEntry?.weekA)
-          removeSubEntry(dayIndex, timeSlotIndex, "a");
-        if (conflictDialogState.existingEntry?.weekB)
-          removeSubEntry(dayIndex, timeSlotIndex, "b");
-        if (conflictDialogState.existingEntry?.weekC)
-          removeSubEntry(dayIndex, timeSlotIndex, "c");
-        // Add the new one to week A
+        if (existingEntry?.weekA) removeSubEntry(dayIndex, timeSlotIndex, "a");
+        if (existingEntry?.weekB) removeSubEntry(dayIndex, timeSlotIndex, "b");
+        if (existingEntry?.weekC) removeSubEntry(dayIndex, timeSlotIndex, "c");
         addEntry(dayIndex, timeSlotIndex, "a", newSubEntryData);
         break;
-      case "replaceSpecific":
-        // Remove the specified week's sub-entry
-        removeSubEntry(dayIndex, timeSlotIndex, action.week);
-        // Add the new one to the specified week
-        addEntry(dayIndex, timeSlotIndex, action.week, newSubEntryData);
+      case "applyStagedArrangement":
+        const { arrangement } = action;
+        const weeks: WeekDesignation[] = ["a", "b", "c"];
+
+        weeks.forEach((week) => {
+          const currentSubjectInStore =
+            existingEntry?.[`week${week.toUpperCase() as "A" | "B" | "C"}`]
+              ?.subjectId || null;
+          const newSubjectInArrangement = arrangement[week];
+
+          if (currentSubjectInStore !== newSubjectInArrangement) {
+            // If there was a subject and now there isn't, or it's different, remove the old one.
+            if (currentSubjectInStore) {
+              removeSubEntry(dayIndex, timeSlotIndex, week);
+            }
+            // If there is a new subject in the arrangement for this week, add it.
+            if (newSubjectInArrangement) {
+              addEntry(dayIndex, timeSlotIndex, week, {
+                subjectId: newSubjectInArrangement,
+              });
+            }
+          }
+        });
         break;
-      case "addNewToWeek":
-        // Add the new one to the specified week (e.g., adding to B or C, keeping A or A&B)
-        addEntry(dayIndex, timeSlotIndex, action.week, newSubEntryData);
-        break;
+      // Old cases like replaceSpecific and addNewToWeek are removed as DnD handles this via applyStagedArrangement
     }
     setConflictDialogState(null); // Close dialog
   };
