@@ -400,16 +400,11 @@ export function TimetablePreview() {
                     fullEntry?.weekA || fullEntry?.weekB || fullEntry?.weekC;
 
                   // Determine effective properties for single subject display / non-multi-subject cell context
-                  const effectiveColor =
-                    subEntryToDisplay?.overrideColor || subjectToDisplay?.color;
-                  const effectiveAbbreviation =
-                    subEntryToDisplay?.overrideAbbreviation ||
-                    subjectToDisplay?.abbreviation;
-                  const effectiveName = subjectToDisplay?.name; // Name itself is not typically overridden at subEntry level
-                  const effectiveIcon =
-                    subEntryToDisplay?.overrideIcon || subjectToDisplay?.icon; // Enable icon display
-                  const effectiveImage =
-                    subEntryToDisplay?.overrideImage || subjectToDisplay?.image; // Enable image display
+                  const effectiveColor = subjectToDisplay?.color;
+                  const effectiveAbbreviation = subjectToDisplay?.abbreviation;
+                  const effectiveName = subjectToDisplay?.name;
+                  const effectiveIcon = subjectToDisplay?.icon;
+                  const effectiveImage = subjectToDisplay?.image;
 
                   const weekSubEntries = {
                     a: fullEntry?.weekA,
@@ -482,16 +477,12 @@ export function TimetablePreview() {
                           {activeWeekSubjects.map(
                             ({ week, subject, subEntry }, index, arr) => {
                               // For multi-subject strips, calculate effective properties per strip
-                              const stripEffectiveColor =
-                                subEntry?.overrideColor || subject.color;
+                              const stripEffectiveColor = subject.color;
                               const stripEffectiveAbbreviation =
-                                subEntry?.overrideAbbreviation ||
                                 subject.abbreviation;
                               const stripEffectiveName = subject.name;
-                              const stripEffectiveIcon =
-                                subEntry?.overrideIcon || subject.icon;
-                              const stripEffectiveImage =
-                                subEntry?.overrideImage || subject.image;
+                              const stripEffectiveIcon = subject.icon;
+                              const stripEffectiveImage = subject.image;
 
                               // Calculate content density to adjust display
                               const hasRoom = !!subEntry.room;
@@ -612,10 +603,8 @@ export function TimetablePreview() {
                       ) : subjectToDisplay ? (
                         // Single subject display logic with effective properties
                         (() => {
-                          const effectiveImagePosition =
-                            subEntryToDisplay?.overrideImagePosition ||
-                            subjectToDisplay?.imagePosition ||
-                            "left"; // Default to left
+                          const imagePositionToUse =
+                            subjectToDisplay?.imagePosition || "left";
 
                           const content = (
                             <div
@@ -670,10 +659,7 @@ export function TimetablePreview() {
                             </div>
                           );
 
-                          if (
-                            effectiveImage &&
-                            effectiveImagePosition === "left"
-                          ) {
+                          if (effectiveImage && imagePositionToUse === "left") {
                             return (
                               <div className="flex h-full w-full">
                                 <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5">
@@ -696,7 +682,7 @@ export function TimetablePreview() {
                           }
                           if (
                             effectiveImage &&
-                            effectiveImagePosition === "right"
+                            imagePositionToUse === "right"
                           ) {
                             return (
                               <div className="flex h-full w-full">

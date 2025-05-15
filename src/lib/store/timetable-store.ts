@@ -28,11 +28,6 @@ export type TimetableSubEntry = {
   room?: string;
   teachers?: string[];
   notes?: string;
-  overrideColor?: string;
-  overrideIcon?: string;
-  overrideAbbreviation?: string;
-  overrideImage?: string;
-  overrideImagePosition?: "left" | "right";
 };
 
 // Updated TimetableEntry type
