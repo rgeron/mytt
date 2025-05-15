@@ -4,14 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   useTimetableStore,
   type TimetableEntry,
@@ -37,8 +31,6 @@ type EditableProperty =
   | "image"
   | "room";
 
-type Scope = "partout" | "justeIci";
-
 interface FormFields {
   color?: string;
   icon?: string;
@@ -51,11 +43,11 @@ interface FormFields {
 }
 
 interface ScopeStates {
-  colorScope: Scope;
-  iconScope: Scope;
-  abbreviationScope: Scope;
-  teacherScope: Scope;
-  imageScope: Scope;
+  colorScope: boolean;
+  iconScope: boolean;
+  abbreviationScope: boolean;
+  teacherScope: boolean;
+  imageScope: boolean;
 }
 
 export function SlotsPanel() {
@@ -70,11 +62,11 @@ export function SlotsPanel() {
 
   const [formState, setFormState] = useState<FormFields>({});
   const [scopeStates, setScopeStates] = useState<ScopeStates>({
-    colorScope: "partout",
-    iconScope: "partout",
-    abbreviationScope: "partout",
-    teacherScope: "partout",
-    imageScope: "partout",
+    colorScope: true,
+    iconScope: true,
+    abbreviationScope: true,
+    teacherScope: true,
+    imageScope: true,
   });
 
   const { subject, subEntryForCurrentWeek, entry } = useMemo(() => {
@@ -124,7 +116,7 @@ export function SlotsPanel() {
         image: subEntryForCurrentWeek?.overrideImage || subject.image || "",
         room: subEntryForCurrentWeek?.room || "",
         teacherInput:
-          scopeStates.teacherScope === "partout"
+          scopeStates.teacherScope === true
             ? subject.teacherOrCoach || ""
             : subEntryForCurrentWeek?.teacher || "",
         subjectTeacherOrCoach: subject.teacherOrCoach,
@@ -144,7 +136,7 @@ export function SlotsPanel() {
         </CardHeader>
         <CardContent>
           <div className="text-sm text-center text-gray-500 p-6 border border-dashed rounded">
-            Sélectionnez d'abord un créneau sur la grille pour le modifier.
+            Sélectionnez d&apos;abord un créneau sur la grille pour le modifier.
           </div>
         </CardContent>
       </Card>
@@ -154,7 +146,7 @@ export function SlotsPanel() {
   const handleInputChange = (field: keyof FormFields, value: string) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
     if (field === "teacherInput") {
-      if (scopeStates.teacherScope === "partout") {
+      if (scopeStates.teacherScope === true) {
         setFormState((prev) => ({ ...prev, subjectTeacherOrCoach: value }));
       } else {
         setFormState((prev) => ({ ...prev, subEntryTeacher: value }));
@@ -164,14 +156,14 @@ export function SlotsPanel() {
 
   const handleScopeChange = (
     propertyKey: keyof Omit<ScopeStates, "roomScope">,
-    newScope: Scope
+    newScope: boolean
   ) => {
     setScopeStates((prev) => ({ ...prev, [propertyKey]: newScope }));
     if (propertyKey === "teacherScope" && subject) {
       setFormState((prev) => ({
         ...prev,
         teacherInput:
-          newScope === "partout"
+          newScope === true
             ? subject.teacherOrCoach || ""
             : subEntryForCurrentWeek?.teacher || "",
       }));
@@ -186,8 +178,7 @@ export function SlotsPanel() {
 
     switch (property) {
       case "color":
-        if (scopeStates.colorScope === "partout")
-          updateSubject(subject.id, { color: value });
+        if (scopeStates.colorScope) updateSubject(subject.id, { color: value });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
             overrideColor: value,
@@ -195,8 +186,7 @@ export function SlotsPanel() {
           });
         break;
       case "icon":
-        if (scopeStates.iconScope === "partout")
-          updateSubject(subject.id, { icon: value });
+        if (scopeStates.iconScope) updateSubject(subject.id, { icon: value });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
             overrideIcon: value,
@@ -204,7 +194,7 @@ export function SlotsPanel() {
           });
         break;
       case "abbreviation":
-        if (scopeStates.abbreviationScope === "partout")
+        if (scopeStates.abbreviationScope)
           updateSubject(subject.id, { abbreviation: value });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
@@ -213,7 +203,7 @@ export function SlotsPanel() {
           });
         break;
       case "teacherInput":
-        if (scopeStates.teacherScope === "partout")
+        if (scopeStates.teacherScope)
           updateSubject(subject.id, { teacherOrCoach: formState.teacherInput });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
@@ -222,8 +212,7 @@ export function SlotsPanel() {
           });
         break;
       case "image":
-        if (scopeStates.imageScope === "partout")
-          updateSubject(subject.id, { image: value });
+        if (scopeStates.imageScope) updateSubject(subject.id, { image: value });
         else
           updateSubEntry(day, timeSlotIndex, currentWeekType, {
             overrideImage: value,
@@ -251,7 +240,7 @@ export function SlotsPanel() {
       editableProperty === "teacherInput" ? "teacher" : editableProperty
     }Scope` as keyof ScopeStates;
     const currentScope =
-      editableProperty === "room" ? "justeIci" : scopeStates[scopeKey];
+      editableProperty === "room" ? false : scopeStates[scopeKey];
 
     return (
       <div className="space-y-2">
@@ -269,27 +258,21 @@ export function SlotsPanel() {
           </Button>
         </div>
         {editableProperty !== "room" && (
-          <Select
-            value={currentScope}
-            onValueChange={(value) =>
-              handleScopeChange(
-                scopeKey as keyof Omit<ScopeStates, "roomScope">,
-                value as Scope
-              )
-            }
-          >
-            <SelectTrigger className="w-[180px] text-xs h-8">
-              <SelectValue placeholder="Scope" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="partout" className="text-xs">
-                Appliquer partout
-              </SelectItem>
-              <SelectItem value="justeIci" className="text-xs">
-                Appliquer juste ici
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center space-x-2 mt-2">
+            <Switch
+              id={`${formField}-scope`}
+              checked={currentScope}
+              onCheckedChange={(checked) =>
+                handleScopeChange(
+                  scopeKey as keyof Omit<ScopeStates, "roomScope">,
+                  checked
+                )
+              }
+            />
+            <Label htmlFor={`${formField}-scope`} className="text-xs">
+              {currentScope ? "Appliquer partout" : "Appliquer juste ici"}
+            </Label>
+          </div>
         )}
       </div>
     );
@@ -305,7 +288,7 @@ export function SlotsPanel() {
           {currentWeekType.toUpperCase()})
         </p>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {renderPropertyEditor("Couleur", "color", "color", "color")}
         {renderPropertyEditor("Icône (URL/Emoji)", "icon", "icon")}
 
