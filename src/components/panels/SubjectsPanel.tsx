@@ -262,6 +262,20 @@ export function SubjectsPanel() {
     [subjects, selectedActivityId]
   );
 
+  useEffect(() => {
+    // When the SubjectsPanel becomes active (mounts),
+    // clear any previously selected activity.
+    // This ensures that an activity must be explicitly chosen within this panel session.
+    setSelectedActivityId(null);
+
+    // When the SubjectsPanel becomes inactive (unmounts, i.e., user switches tabs),
+    // clear the selected activity. This enforces that timetable filling
+    // can only occur when the SubjectsPanel is the active context.
+    return () => {
+      setSelectedActivityId(null);
+    };
+  }, [setSelectedActivityId]);
+
   return (
     <div className="flex flex-col gap-4 h-full">
       <h3 className="text-lg font-semibold leading-none tracking-tight px-1">
