@@ -3,8 +3,7 @@
 import { useTimetableStore } from "@/lib/store/timetable-store";
 
 export function DisplayPanel() {
-  const { title, subtitle, weekType, setTitle, setSubtitle, setWeekType } =
-    useTimetableStore();
+  const { title, subtitle, setTitle, setSubtitle } = useTimetableStore();
 
   return (
     <div className="space-y-4">
@@ -34,23 +33,6 @@ export function DisplayPanel() {
             className="border rounded p-2 w-full"
             placeholder="Année scolaire 2023-2024"
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Type de semaine
-          </label>
-          <select
-            value={weekType}
-            onChange={(e) =>
-              setWeekType(e.target.value as "single" | "ab" | "abc")
-            }
-            className="border rounded p-2 w-full"
-          >
-            <option value="single">Semaine unique</option>
-            <option value="ab">Semaines A/B</option>
-            <option value="abc">Semaines A/B/C</option>
-          </select>
         </div>
       </div>
     </div>

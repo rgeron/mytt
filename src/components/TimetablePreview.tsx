@@ -1,16 +1,6 @@
 "use client";
 
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import {
   useTimetableStore,
   type Subject,
   type TimetableEntry,
@@ -20,6 +10,10 @@ import {
 import { cn } from "@/lib/utils";
 import { InfoIcon, Trash2Icon } from "lucide-react";
 import React, { useMemo, useState } from "react";
+import {
+  ConflictResolutionDialog,
+  type ConflictResolutionAction,
+} from "./dialogs/ConflictResolutionDialog";
 
 export function TimetablePreview() {
   const {
@@ -32,12 +26,10 @@ export function TimetablePreview() {
     selectedActivityId,
     addEntry,
     removeSubEntry,
-    weekType,
     currentWeekType,
   } = useTimetableStore();
 
   const [conflictDialogState, setConflictDialogState] = useState<{
-    open: boolean;
     dayIndex: number;
     timeSlotIndex: number;
     newSubjectId: string;
@@ -100,29 +92,33 @@ export function TimetablePreview() {
 
     const newSubEntryData: TimetableSubEntry = {
       subjectId: selectedActivityId,
-    }; // Room, teacher, notes can be added later
+    };
+
+    // Check if the new subject is already present in any of the weeks
+    const isAlreadyPresentA =
+      existingEntry?.weekA?.subjectId === selectedActivityId;
+    const isAlreadyPresentB =
+      existingEntry?.weekB?.subjectId === selectedActivityId;
+    const isAlreadyPresentC =
+      existingEntry?.weekC?.subjectId === selectedActivityId;
+
+    // If adding the same subject to a slot that already contains it (in any week), do nothing for now.
+    // A future feature could allow editing properties like room/teacher here.
+    if (isAlreadyPresentA || isAlreadyPresentB || isAlreadyPresentC) {
+      // Optionally, select the existing entry or open an edit dialog in the future.
+      // For now, if it's the same, we don't trigger conflict or add.
+      return;
+    }
 
     if (
       !existingEntry ||
       (!existingEntry.weekA && !existingEntry.weekB && !existingEntry.weekC)
     ) {
-      // Slot is completely empty, add to weekA by default or currentWeekType if appropriate
+      // Slot is completely empty, add to weekA by default.
       addEntry(dayIndex, timeSlotIndex, "a", newSubEntryData);
-    } else if (weekType === "single") {
-      // Always replace for single week type (effectively replacing weekA)
-      if (existingEntry.weekA?.subjectId !== selectedActivityId) {
-        setConflictDialogState({
-          open: true,
-          dayIndex,
-          timeSlotIndex,
-          newSubjectId: selectedActivityId,
-          existingEntry,
-        });
-      } // If same subject, do nothing
     } else {
-      // Multi-week scenario: Open conflict dialog
+      // Slot has at least one activity, and it's different from the new one. Open conflict dialog.
       setConflictDialogState({
-        open: true,
         dayIndex,
         timeSlotIndex,
         newSubjectId: selectedActivityId,
@@ -131,21 +127,33 @@ export function TimetablePreview() {
     }
   };
 
-  const handleConflictResolution = (action: "replace" | WeekDesignation) => {
+  const handleConflictResolution = (action: ConflictResolutionAction) => {
     if (!conflictDialogState) return;
-    const { dayIndex, timeSlotIndex, newSubjectId, existingEntry } =
-      conflictDialogState;
+    const { dayIndex, timeSlotIndex, newSubjectId } = conflictDialogState;
     const newSubEntryData: TimetableSubEntry = { subjectId: newSubjectId };
 
-    if (action === "replace") {
-      // Remove all existing sub-entries for this slot then add the new one to week A
-      if (existingEntry?.weekA) removeSubEntry(dayIndex, timeSlotIndex, "a");
-      if (existingEntry?.weekB) removeSubEntry(dayIndex, timeSlotIndex, "b");
-      if (existingEntry?.weekC) removeSubEntry(dayIndex, timeSlotIndex, "c");
-      addEntry(dayIndex, timeSlotIndex, "a", newSubEntryData);
-    } else {
-      // Action is a WeekDesignation ('a', 'b', or 'c')
-      addEntry(dayIndex, timeSlotIndex, action, newSubEntryData);
+    switch (action.type) {
+      case "replaceAll":
+        // Remove all existing sub-entries for this slot
+        if (conflictDialogState.existingEntry?.weekA)
+          removeSubEntry(dayIndex, timeSlotIndex, "a");
+        if (conflictDialogState.existingEntry?.weekB)
+          removeSubEntry(dayIndex, timeSlotIndex, "b");
+        if (conflictDialogState.existingEntry?.weekC)
+          removeSubEntry(dayIndex, timeSlotIndex, "c");
+        // Add the new one to week A
+        addEntry(dayIndex, timeSlotIndex, "a", newSubEntryData);
+        break;
+      case "replaceSpecific":
+        // Remove the specified week's sub-entry
+        removeSubEntry(dayIndex, timeSlotIndex, action.week);
+        // Add the new one to the specified week
+        addEntry(dayIndex, timeSlotIndex, action.week, newSubEntryData);
+        break;
+      case "addNewToWeek":
+        // Add the new one to the specified week (e.g., adding to B or C, keeping A or A&B)
+        addEntry(dayIndex, timeSlotIndex, action.week, newSubEntryData);
+        break;
     }
     setConflictDialogState(null); // Close dialog
   };
@@ -191,16 +199,6 @@ export function TimetablePreview() {
       .join(" ");
     return `auto ${rowFractions}`;
   }, [timeSlots, timeSlotDurations, totalDayMinutes]);
-
-  const getAvailableWeeksForDialog = (): WeekDesignation[] => {
-    if (!conflictDialogState || !conflictDialogState.existingEntry) return [];
-    const { existingEntry } = conflictDialogState;
-    const available: WeekDesignation[] = [];
-    if (!existingEntry.weekA) available.push("a");
-    if (weekType !== "single" && !existingEntry.weekB) available.push("b");
-    if (weekType === "abc" && !existingEntry.weekC) available.push("c");
-    return available;
-  };
 
   return (
     <div className="relative h-full w-full flex flex-col justify-center">
@@ -383,80 +381,25 @@ export function TimetablePreview() {
         </div>
       </div>
 
-      {conflictDialogState?.open && (
-        <AlertDialog
-          open={conflictDialogState.open}
-          onOpenChange={(open) => !open && setConflictDialogState(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Conflit d&apos;activité</AlertDialogTitle>
-              <AlertDialogDescription>
-                Une activité est déjà planifiée pour ce créneau. Que
-                souhaitez-vous faire ?
-                {conflictDialogState.existingEntry && (
-                  <div className="mt-2 text-xs">
-                    Actuellement:
-                    {conflictDialogState.existingEntry.weekA && (
-                      <li>
-                        Sem. A:{" "}
-                        {
-                          findSubject(
-                            conflictDialogState.existingEntry.weekA.subjectId
-                          )?.name
-                        }
-                      </li>
-                    )}
-                    {conflictDialogState.existingEntry.weekB && (
-                      <li>
-                        Sem. B:{" "}
-                        {
-                          findSubject(
-                            conflictDialogState.existingEntry.weekB.subjectId
-                          )?.name
-                        }
-                      </li>
-                    )}
-                    {conflictDialogState.existingEntry.weekC && (
-                      <li>
-                        Sem. C:{" "}
-                        {
-                          findSubject(
-                            conflictDialogState.existingEntry.weekC.subjectId
-                          )?.name
-                        }
-                      </li>
-                    )}
-                  </div>
-                )}
-                Nouveau: {findSubject(conflictDialogState.newSubjectId)?.name}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 items-center">
-              <AlertDialogCancel onClick={() => setConflictDialogState(null)}>
-                Annuler
-              </AlertDialogCancel>
-              <Button
-                variant="destructive"
-                className="w-full sm:w-auto"
-                onClick={() => handleConflictResolution("replace")}
-              >
-                Remplacer Tout
-              </Button>
-              {getAvailableWeeksForDialog().map((week) => (
-                <Button
-                  key={week}
-                  className="w-full sm:w-auto"
-                  variant="outline"
-                  onClick={() => handleConflictResolution(week)}
-                >
-                  Ajouter en Semaine {week.toUpperCase()}
-                </Button>
-              ))}
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      {/* Use the new ConflictResolutionDialog component */}
+      <ConflictResolutionDialog
+        isOpen={conflictDialogState !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setConflictDialogState(null);
+          }
+        }}
+        dialogData={
+          conflictDialogState
+            ? {
+                newSubjectId: conflictDialogState.newSubjectId,
+                existingEntry: conflictDialogState.existingEntry,
+              }
+            : null
+        }
+        findSubject={findSubject} // Pass findSubject function
+        onResolve={handleConflictResolution} // Pass the resolver function
+      />
     </div>
   );
 }
