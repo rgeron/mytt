@@ -501,8 +501,9 @@ export function TimetablePreview() {
                                 <div
                                   key={`week-strip-${week}`}
                                   className={cn(
-                                    "flex-1 p-0.5 overflow-hidden flex flex-col justify-center items-center text-center",
-                                    index < arr.length - 1 ? "border-r" : ""
+                                    "flex-1 overflow-hidden flex flex-col justify-center items-center text-center",
+                                    index < arr.length - 1 ? "border-r" : "",
+                                    contentDensity > 2 ? "p-0" : "p-0.5"
                                   )}
                                   style={{
                                     backgroundColor: `${stripEffectiveColor}20`,
@@ -510,7 +511,7 @@ export function TimetablePreview() {
                                   }}
                                 >
                                   {/* Icon & Subject Name Section */}
-                                  <div className="w-full flex items-center justify-center">
+                                  <div className="w-full flex items-center justify-center overflow-hidden">
                                     {hasIcon && stripEffectiveIcon && (
                                       <span className="inline-block mr-0.5 text-[8px]">
                                         {stripEffectiveIcon}
@@ -520,8 +521,10 @@ export function TimetablePreview() {
                                       className={cn(
                                         "font-semibold text-foreground truncate w-full",
                                         contentDensity > 2
+                                          ? "text-[7px]"
+                                          : showTimeLabelsInCell
                                           ? "text-[8px]"
-                                          : "text-[9px]"
+                                          : "text-[7px]"
                                       )}
                                     >
                                       {stripEffectiveAbbreviation ||
@@ -538,14 +541,14 @@ export function TimetablePreview() {
                                   {showTimeLabelsInCell && (
                                     <div
                                       className={cn(
-                                        "flex flex-col w-full",
+                                        "flex flex-col w-full overflow-hidden",
                                         contentDensity > 2 ? "gap-0" : "gap-0.5"
                                       )}
                                     >
                                       {/* Conditionally show image */}
                                       {hasImage && stripEffectiveImage && (
                                         <div className="w-full flex justify-center">
-                                          <div className="w-4 h-4 overflow-hidden rounded-sm">
+                                          <div className="w-3 h-3 overflow-hidden rounded-sm">
                                             <img
                                               src={stripEffectiveImage}
                                               alt=""
@@ -566,8 +569,8 @@ export function TimetablePreview() {
                                           className={cn(
                                             "text-muted-foreground truncate w-full",
                                             contentDensity > 2
-                                              ? "text-[6px]"
-                                              : "text-[7px]"
+                                              ? "text-[5px]"
+                                              : "text-[6px]"
                                           )}
                                         >
                                           <span className="font-medium">
@@ -581,8 +584,8 @@ export function TimetablePreview() {
                                           className={cn(
                                             "text-muted-foreground truncate w-full",
                                             contentDensity > 2
-                                              ? "text-[6px]"
-                                              : "text-[7px]"
+                                              ? "text-[5px]"
+                                              : "text-[6px]"
                                           )}
                                         >
                                           <span className="font-medium">
@@ -609,35 +612,42 @@ export function TimetablePreview() {
                           const content = (
                             <div
                               className={cn(
-                                "flex flex-col w-full",
-                                showTimeLabelsInCell ? "p-1" : "p-0.5",
+                                "flex flex-col w-full overflow-hidden",
+                                showTimeLabelsInCell ? "p-0.5" : "p-0.25",
                                 "text-center"
                               )}
                             >
                               {/* Subject name with optional icon */}
-                              <div className="flex items-center justify-center">
+                              <div className="flex items-center justify-center overflow-hidden">
                                 {effectiveIcon && (
-                                  <span className="inline-block mr-0.5 text-[10px]">
+                                  <span className="inline-block mr-0.5 text-[9px]">
                                     {effectiveIcon}
                                   </span>
                                 )}
-                                <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                <div
+                                  className={cn(
+                                    "font-semibold text-foreground truncate w-full",
+                                    showTimeLabelsInCell
+                                      ? "text-[9px]"
+                                      : "text-[8px]"
+                                  )}
+                                >
                                   {effectiveAbbreviation || effectiveName}
                                 </div>
                               </div>
 
                               {/* Additional details with responsive visibility */}
                               {showTimeLabelsInCell && (
-                                <div className="mt-0.5 space-y-0.5">
+                                <div className="mt-0.5 space-y-0.5 overflow-hidden">
                                   {subEntryToDisplay?.room && (
-                                    <div className="text-[8px] text-muted-foreground truncate">
+                                    <div className="text-[7px] text-muted-foreground truncate">
                                       <span className="font-medium">S:</span>{" "}
                                       {subEntryToDisplay.room}
                                     </div>
                                   )}
                                   {Array.isArray(subEntryToDisplay?.teachers)
                                     ? subEntryToDisplay.teachers.length > 0 && (
-                                        <div className="text-[8px] text-muted-foreground truncate">
+                                        <div className="text-[7px] text-muted-foreground truncate">
                                           <span className="font-medium">
                                             P:
                                           </span>{" "}
@@ -647,7 +657,7 @@ export function TimetablePreview() {
                                         </div>
                                       )
                                     : subEntryToDisplay?.teachers && (
-                                        <div className="text-[8px] text-muted-foreground truncate">
+                                        <div className="text-[7px] text-muted-foreground truncate">
                                           <span className="font-medium">
                                             P:
                                           </span>{" "}
@@ -661,8 +671,8 @@ export function TimetablePreview() {
 
                           if (effectiveImage && imagePositionToUse === "left") {
                             return (
-                              <div className="flex h-full w-full">
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5">
+                              <div className="flex h-full w-full overflow-hidden">
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
                                   <img
                                     src={effectiveImage}
                                     alt=""
@@ -674,7 +684,7 @@ export function TimetablePreview() {
                                     }}
                                   />
                                 </div>
-                                <div className="flex-1 flex items-center justify-center">
+                                <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
                                 </div>
                               </div>
@@ -685,11 +695,11 @@ export function TimetablePreview() {
                             imagePositionToUse === "right"
                           ) {
                             return (
-                              <div className="flex h-full w-full">
-                                <div className="flex-1 flex items-center justify-center">
+                              <div className="flex h-full w-full overflow-hidden">
+                                <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
                                 </div>
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5">
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
                                   <img
                                     src={effectiveImage}
                                     alt=""
