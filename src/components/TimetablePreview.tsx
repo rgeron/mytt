@@ -9,7 +9,7 @@ import {
 } from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
 import { InfoIcon } from "lucide-react";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ConflictResolutionDialog,
   type ConflictResolutionAction,
@@ -199,29 +199,6 @@ export function TimetablePreview() {
       // Old cases like replaceSpecific and addNewToWeek are removed as DnD handles this via applyStagedArrangement
     }
     setConflictDialogState(null); // Close dialog
-  };
-
-  // Eraser for the whole slot: removes all week entries
-  const handleRemoveFullEntry = (
-    e: React.MouseEvent,
-    dayIndex: number,
-    startTimeSlotIndex: number,
-    span: number = 1
-  ) => {
-    e.stopPropagation();
-    // This function is no longer directly called by a button in the cell.
-    // Its logic is now incorporated into handleCellClick when eraser is active.
-    // Keeping the function signature in case it's useful for other bulk operations later,
-    // but for now, direct eraser click handles individual slots.
-    // For multi-span cells, eraser will clear the first slot of the span.
-    // To clear a full merged entry, user would click the first slot of that merged block.
-    const currentTimeSlotIndex = startTimeSlotIndex; // We target only the clicked slot part of a span
-    const entry = findEntryForSlotCb(dayIndex, currentTimeSlotIndex);
-    if (entry) {
-      if (entry.weekA) removeSubEntry(dayIndex, currentTimeSlotIndex, "a");
-      if (entry.weekB) removeSubEntry(dayIndex, currentTimeSlotIndex, "b");
-      if (entry.weekC) removeSubEntry(dayIndex, currentTimeSlotIndex, "c");
-    }
   };
 
   // Day names in French
@@ -423,7 +400,10 @@ export function TimetablePreview() {
                     subEntryToDisplay?.overrideAbbreviation ||
                     subjectToDisplay?.abbreviation;
                   const effectiveName = subjectToDisplay?.name; // Name itself is not typically overridden at subEntry level
-                  // const effectiveIcon = subEntryToDisplay?.overrideIcon || subjectToDisplay?.icon; // For future icon display
+                  const effectiveIcon =
+                    subEntryToDisplay?.overrideIcon || subjectToDisplay?.icon; // Enable icon display
+                  const effectiveImage =
+                    subEntryToDisplay?.overrideImage || subjectToDisplay?.image; // Enable image display
 
                   const weekSubEntries = {
                     a: fullEntry?.weekA,
@@ -466,21 +446,21 @@ export function TimetablePreview() {
                         gridRowStart: cellData.timeIndex + 2,
                         gridRowEnd: `span ${cellData.span}`,
                         backgroundColor:
-                          isMultiSubjectCell || !effectiveColor // Use effectiveColor
+                          isMultiSubjectCell || !effectiveColor
                             ? undefined
                             : `${effectiveColor}20`,
                         borderLeft: isMultiSubjectCell
                           ? selectedActivityId &&
                             findSubjectCb(selectedActivityId)
                             ? `4px dashed ${
-                                findSubjectCb(selectedActivityId)?.color || // Dashed border uses selected activity color
+                                findSubjectCb(selectedActivityId)?.color ||
                                 "transparent"
                               }`
                             : undefined
-                          : effectiveColor // Use effectiveColor for solid border
+                          : effectiveColor
                           ? `4px solid ${effectiveColor}`
                           : selectedActivityId &&
-                            findSubjectCb(selectedActivityId) // Fallback to dashed if no effective color but an activity is selected
+                            findSubjectCb(selectedActivityId)
                           ? `4px dashed ${
                               findSubjectCb(selectedActivityId)?.color ||
                               "transparent"
@@ -502,36 +482,117 @@ export function TimetablePreview() {
                                 subEntry?.overrideAbbreviation ||
                                 subject.abbreviation;
                               const stripEffectiveName = subject.name;
-                              // const stripEffectiveIcon = subEntry?.overrideIcon || subject.icon;
+                              const stripEffectiveIcon =
+                                subEntry?.overrideIcon || subject.icon;
+                              const stripEffectiveImage =
+                                subEntry?.overrideImage || subject.image;
+
+                              // Calculate content density to adjust display
+                              const hasRoom = !!subEntry.room;
+                              const hasTeacher = !!subEntry.teacher;
+                              const hasIcon = !!stripEffectiveIcon;
+                              const hasImage = !!stripEffectiveImage;
+                              const contentDensity = [
+                                hasRoom,
+                                hasTeacher,
+                                hasIcon,
+                                hasImage,
+                              ].filter(Boolean).length;
 
                               return (
                                 <div
                                   key={`week-strip-${week}`}
                                   className={cn(
-                                    "flex-1 p-1 overflow-hidden flex flex-col justify-center items-center text-center",
+                                    "flex-1 p-0.5 overflow-hidden flex flex-col justify-center items-center text-center",
                                     index < arr.length - 1 ? "border-r" : ""
                                   )}
                                   style={{
-                                    backgroundColor: `${stripEffectiveColor}20`, // Use stripEffectiveColor
+                                    backgroundColor: `${stripEffectiveColor}20`,
                                     borderColor: `${stripEffectiveColor}50`,
                                   }}
                                 >
-                                  <div className="font-semibold text-[10px] text-foreground truncate w-full">
-                                    {stripEffectiveAbbreviation ||
-                                      stripEffectiveName}{" "}
-                                    {/* Display abbreviation or name */}
-                                  </div>
-                                  <div className="text-[8px] text-muted-foreground/80">
-                                    {`Sem. ${week.toUpperCase()}`}
-                                  </div>
-                                  {subEntry.room && showTimeLabelsInCell && (
-                                    <div className="text-[9px] text-muted-foreground truncate w-full">
-                                      S: {subEntry.room}
+                                  {/* Icon & Subject Name Section */}
+                                  <div className="w-full flex items-center justify-center">
+                                    {hasIcon && stripEffectiveIcon && (
+                                      <span className="inline-block mr-0.5 text-[8px]">
+                                        {stripEffectiveIcon}
+                                      </span>
+                                    )}
+                                    <div
+                                      className={cn(
+                                        "font-semibold text-foreground truncate w-full",
+                                        contentDensity > 2
+                                          ? "text-[8px]"
+                                          : "text-[9px]"
+                                      )}
+                                    >
+                                      {stripEffectiveAbbreviation ||
+                                        stripEffectiveName}
                                     </div>
-                                  )}
-                                  {subEntry.teacher && showTimeLabelsInCell && (
-                                    <div className="text-[9px] text-muted-foreground truncate w-full">
-                                      P: {subEntry.teacher}
+                                  </div>
+
+                                  {/* Week designation */}
+                                  <div className="text-[6px] text-muted-foreground/70">
+                                    {`S. ${week.toUpperCase()}`}
+                                  </div>
+
+                                  {/* Additional content if there's space */}
+                                  {showTimeLabelsInCell && (
+                                    <div
+                                      className={cn(
+                                        "flex flex-col w-full",
+                                        contentDensity > 2 ? "gap-0" : "gap-0.5"
+                                      )}
+                                    >
+                                      {/* Conditionally show image */}
+                                      {hasImage && stripEffectiveImage && (
+                                        <div className="w-full flex justify-center">
+                                          <div className="w-4 h-4 overflow-hidden rounded-sm">
+                                            <img
+                                              src={stripEffectiveImage}
+                                              alt=""
+                                              className="w-full h-full object-cover"
+                                              onError={(e) => {
+                                                (
+                                                  e.target as HTMLImageElement
+                                                ).style.display = "none";
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Room & Teacher info */}
+                                      {hasRoom && (
+                                        <div
+                                          className={cn(
+                                            "text-muted-foreground truncate w-full",
+                                            contentDensity > 2
+                                              ? "text-[6px]"
+                                              : "text-[7px]"
+                                          )}
+                                        >
+                                          <span className="font-medium">
+                                            S:
+                                          </span>{" "}
+                                          {subEntry.room}
+                                        </div>
+                                      )}
+                                      {hasTeacher && (
+                                        <div
+                                          className={cn(
+                                            "text-muted-foreground truncate w-full",
+                                            contentDensity > 2
+                                              ? "text-[6px]"
+                                              : "text-[7px]"
+                                          )}
+                                        >
+                                          <span className="font-medium">
+                                            P:
+                                          </span>{" "}
+                                          {subEntry.teacher}
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -540,50 +601,61 @@ export function TimetablePreview() {
                           )}
                         </div>
                       ) : subjectToDisplay ? (
-                        // Existing single subject display logic, now using effective properties
+                        // Single subject display logic with effective properties
                         <div
-                          className={cn(
-                            "flex flex-col h-full justify-center",
-                            showTimeLabelsInCell ? "p-2" : "p-0 text-center"
-                          )}
+                          className="flex flex-col h-full w-full justify-center overflow-hidden"
+                          style={
+                            effectiveImage
+                              ? {
+                                  backgroundImage: `url(${effectiveImage})`,
+                                  backgroundSize: "cover",
+                                  backgroundPosition: "center",
+                                  backgroundRepeat: "no-repeat",
+                                  backgroundBlendMode: "overlay",
+                                }
+                              : undefined
+                          }
                         >
-                          <div className="font-semibold text-xs text-foreground truncate">
-                            {effectiveAbbreviation || effectiveName}{" "}
-                            {/* Display abbreviation or name */}
-                          </div>
-                          {subEntryToDisplay?.room && showTimeLabelsInCell && (
-                            <div className="text-xs text-muted-foreground truncate mt-1">
-                              <span className="font-medium">Salle:</span>{" "}
-                              {subEntryToDisplay.room}
+                          {/* Main content with adaptive sizing */}
+                          <div
+                            className={cn(
+                              "flex flex-col w-full",
+                              showTimeLabelsInCell ? "p-1" : "p-0.5",
+                              "text-center"
+                            )}
+                          >
+                            {/* Subject name with optional icon */}
+                            <div className="flex items-center justify-center">
+                              {effectiveIcon && (
+                                <span className="inline-block mr-0.5 text-[10px]">
+                                  {effectiveIcon}
+                                </span>
+                              )}
+                              <div className="font-semibold text-[10px] text-foreground truncate w-full">
+                                {effectiveAbbreviation || effectiveName}
+                              </div>
                             </div>
-                          )}
-                          {subEntryToDisplay?.teacher &&
-                            showTimeLabelsInCell && (
-                              <div className="text-xs text-muted-foreground truncate">
-                                <span className="font-medium">Prof:</span>{" "}
-                                {subEntryToDisplay.teacher}
+
+                            {/* Additional details with responsive visibility */}
+                            {showTimeLabelsInCell && (
+                              <div className="mt-0.5 space-y-0.5">
+                                {subEntryToDisplay?.room && (
+                                  <div className="text-[8px] text-muted-foreground truncate">
+                                    <span className="font-medium">S:</span>{" "}
+                                    {subEntryToDisplay.room}
+                                  </div>
+                                )}
+                                {subEntryToDisplay?.teacher && (
+                                  <div className="text-[8px] text-muted-foreground truncate">
+                                    <span className="font-medium">P:</span>{" "}
+                                    {subEntryToDisplay.teacher}
+                                  </div>
+                                )}
                               </div>
                             )}
+                          </div>
                         </div>
                       ) : null}
-
-                      {/* Eraser Icon: REMOVED */}
-                      {/* {hasAnyEntryInFirstSlot && (
-                        <button
-                          title="Supprimer toutes les entrées de ce créneau"
-                          onClick={(e) =>
-                            handleRemoveFullEntry(
-                              e,
-                              dayIndex,
-                              cellData.timeIndex,
-                              cellData.span
-                            )
-                          }
-                          className="absolute top-0.5 right-0.5 p-0.5 bg-card/50 hover:bg-destructive/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
-                        >
-                          <Trash2Icon className="h-3.5 w-3.5 text-destructive/80 hover:text-destructive" />
-                        </button>
-                      )} */}
 
                       {/* Info Icon: Show if not multi-subject, no effective subject displayed, but other weeks have data */}
                       {!isMultiSubjectCell &&
