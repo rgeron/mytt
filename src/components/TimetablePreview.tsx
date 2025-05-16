@@ -446,10 +446,11 @@ export function TimetablePreview() {
                         gridColumn: dayIndex + 2,
                         gridRowStart: cellData.timeIndex + 2,
                         gridRowEnd: `span ${cellData.span}`,
-                        backgroundColor:
-                          isMultiSubjectCell || !effectiveColor
-                            ? undefined
-                            : `${effectiveColor}20`,
+                        backgroundColor: isMultiSubjectCell
+                          ? undefined
+                          : subjectToDisplay?.subjectType === "break"
+                          ? `${effectiveColor || "#33333"}`
+                          : `${effectiveColor}20`,
                         borderLeft: isMultiSubjectCell
                           ? selectedActivityId &&
                             findSubjectCb(selectedActivityId)
@@ -458,6 +459,8 @@ export function TimetablePreview() {
                                 "transparent"
                               }`
                             : undefined
+                          : subjectToDisplay?.subjectType === "break"
+                          ? undefined // Remove border for break subjects
                           : effectiveColor
                           ? `4px solid ${effectiveColor}`
                           : selectedActivityId &&
@@ -608,36 +611,55 @@ export function TimetablePreview() {
                         (() => {
                           const imagePositionToUse =
                             subjectToDisplay?.imagePosition || "left";
+                          const isBreakType =
+                            subjectToDisplay.subjectType === "break";
+
+                          // Special styling for breaks
+                          const breakStyle = isBreakType
+                            ? {
+                                backgroundColor: `${
+                                  effectiveColor || "#333333"
+                                }`,
+                              }
+                            : {
+                                backgroundColor: `${effectiveColor}20`,
+                              };
 
                           const content = (
                             <div
                               className={cn(
                                 "flex flex-col w-full overflow-hidden",
                                 showTimeLabelsInCell ? "p-0.5" : "p-0.25",
-                                "text-center"
+                                "text-center",
+                                isBreakType ? "text-white" : ""
                               )}
                             >
-                              {/* Subject name with optional icon */}
-                              <div className="flex items-center justify-center overflow-hidden">
-                                {effectiveIcon && (
-                                  <span className="inline-block mr-0.5 text-[9px]">
-                                    {effectiveIcon}
-                                  </span>
-                                )}
-                                <div
-                                  className={cn(
-                                    "font-semibold text-foreground truncate w-full",
-                                    showTimeLabelsInCell
-                                      ? "text-[9px]"
-                                      : "text-[8px]"
+                              {/* Subject name with optional icon - only show if there's enough room for breaks */}
+                              {(!isBreakType || showTimeLabelsInCell) && (
+                                <div className="flex items-center justify-center overflow-hidden">
+                                  {effectiveIcon && (
+                                    <span className="inline-block mr-0.5 text-[9px]">
+                                      {effectiveIcon}
+                                    </span>
                                   )}
-                                >
-                                  {effectiveAbbreviation || effectiveName}
+                                  <div
+                                    className={cn(
+                                      "font-semibold truncate w-full",
+                                      showTimeLabelsInCell
+                                        ? "text-[9px]"
+                                        : "text-[8px]",
+                                      isBreakType
+                                        ? "text-white"
+                                        : "text-foreground"
+                                    )}
+                                  >
+                                    {effectiveAbbreviation || effectiveName}
+                                  </div>
                                 </div>
-                              </div>
+                              )}
 
                               {/* Additional details with responsive visibility */}
-                              {showTimeLabelsInCell && (
+                              {showTimeLabelsInCell && !isBreakType && (
                                 <div className="mt-0.5 space-y-0.5 overflow-hidden">
                                   {subEntryToDisplay?.room && (
                                     <div className="text-[7px] text-muted-foreground truncate">
@@ -669,9 +691,16 @@ export function TimetablePreview() {
                             </div>
                           );
 
-                          if (effectiveImage && imagePositionToUse === "left") {
+                          if (
+                            effectiveImage &&
+                            imagePositionToUse === "left" &&
+                            !isBreakType
+                          ) {
                             return (
-                              <div className="flex h-full w-full overflow-hidden">
+                              <div
+                                className="flex h-full w-full overflow-hidden"
+                                style={breakStyle}
+                              >
                                 <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
                                   <img
                                     src={effectiveImage}
@@ -692,10 +721,14 @@ export function TimetablePreview() {
                           }
                           if (
                             effectiveImage &&
-                            imagePositionToUse === "right"
+                            imagePositionToUse === "right" &&
+                            !isBreakType
                           ) {
                             return (
-                              <div className="flex h-full w-full overflow-hidden">
+                              <div
+                                className="flex h-full w-full overflow-hidden"
+                                style={breakStyle}
+                              >
                                 <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
                                 </div>
@@ -716,7 +749,10 @@ export function TimetablePreview() {
                           }
                           // Content only (no image or invalid position, though invalid position should default to left)
                           return (
-                            <div className="flex flex-col h-full w-full justify-center overflow-hidden">
+                            <div
+                              className="flex flex-col h-full w-full justify-center overflow-hidden"
+                              style={breakStyle}
+                            >
                               {content}
                             </div>
                           );
