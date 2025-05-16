@@ -366,7 +366,7 @@ const defaultSubjects: Subject[] = [
 
 const initialState = {
   title: "Mon Emploi du Temps",
-  subtitle: "Année scolaire 2023-2024",
+  subtitle: "",
   timeSlots: defaultTimeSlots,
   subjects: defaultSubjects,
   entries: [], // Initial entries are empty, will conform to new TimetableEntry structure
@@ -380,7 +380,7 @@ const initialState = {
   globalFont: "Arial",
   titleFont: "Arial",
   titleColor: "#000000",
-  globalBackgroundColor: "#F9FAFB",
+  globalBackgroundColor: "##d5d6d7",
   // Initial value for new global color option
   globalColor: "#333333", // Default dark gray
 };
