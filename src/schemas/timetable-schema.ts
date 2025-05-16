@@ -44,10 +44,10 @@ export const SubjectSchema = z.object({
   subjectType: z.enum(["school", "extracurricular", "break"], {
     required_error: "Le type d'activité est requis",
   }),
-  icon: z.string().optional(),
+  icon: z.array(z.string()).optional(),
   abbreviation: z.string().optional(),
   image: z.string().url({ message: "URL d'image invalide" }).optional(),
-  teacherOrCoach: z.string().optional(),
+  teacherOrCoach: z.array(z.string()).optional(),
 });
 
 // New schema for a sub-entry within a week

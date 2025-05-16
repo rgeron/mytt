@@ -16,6 +16,7 @@ import {
   type TimetableEntry,
   type WeekDesignation,
 } from "@/lib/store/timetable-store";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // Helper to get the week key for TimetableEntry
@@ -39,13 +40,14 @@ type EditableProperty =
 
 interface FormFields {
   color?: string;
-  icon?: string;
+  icon?: Option[];
   abbreviation?: string;
   teachers?: Option[];
   image?: string;
   imagePosition?: "left" | "right";
   room?: string;
   subjectTeacherOrCoach?: string[];
+  subjectIcons?: string[];
   subEntryTeachers?: string[];
 }
 
@@ -120,15 +122,21 @@ export function SlotsPanel() {
         label: teacher,
       }));
 
+      const iconOptions = ensureArray(subject.icon).map((icon) => ({
+        value: icon,
+        label: icon,
+      }));
+
       const newFormState: FormFields = {
         color: subject.color || "",
-        icon: subject.icon || "",
+        icon: iconOptions,
         abbreviation: subject.abbreviation || "",
         image: subject.image || "",
         imagePosition: subject.imagePosition || "left",
         room: subEntryForCurrentWeek?.room || "",
         teachers: teacherOptions,
         subjectTeacherOrCoach: ensureArray(subject.teacherOrCoach),
+        subjectIcons: ensureArray(subject.icon),
         subEntryTeachers: ensureArray(subEntryForCurrentWeek?.teachers),
       };
       setFormState(newFormState);
@@ -173,6 +181,14 @@ export function SlotsPanel() {
         subEntryTeachers: options.map((opt) => opt.value),
       }));
     }
+  };
+
+  const handleIconsChange = (options: Option[]) => {
+    setFormState((prev) => ({
+      ...prev,
+      icon: options,
+      subjectIcons: options.map((opt) => opt.value),
+    }));
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,7 +241,7 @@ export function SlotsPanel() {
         updateSubject(subject.id, { color: formState.color });
         break;
       case "icon":
-        updateSubject(subject.id, { icon: formState.icon });
+        updateSubject(subject.id, { icon: formState.subjectIcons });
         break;
       case "abbreviation":
         updateSubject(subject.id, { abbreviation: formState.abbreviation });
@@ -262,7 +278,7 @@ export function SlotsPanel() {
 
   const renderPropertyEditor = (
     label: string,
-    formField: keyof Omit<FormFields, "teachers" | "imagePosition">,
+    formField: keyof Omit<FormFields, "teachers" | "icon" | "imagePosition">,
     editableProperty: EditableProperty,
     inputType: string = "text"
   ) => {
@@ -321,6 +337,41 @@ export function SlotsPanel() {
             {currentScope ? "Appliquer partout" : "Appliquer juste ici"}
           </Label>
         </div>
+      </div>
+    );
+  };
+
+  const renderIconsEditor = () => {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="icons">Icône / Emoji</Label>
+          <a
+            href="https://getemoji.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs flex items-center text-muted-foreground hover:text-primary"
+          >
+            Trouver des emojis <ExternalLink className="h-3 w-3 ml-1" />
+          </a>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="flex-grow">
+            <MultipleSelector
+              value={formState.icon || []}
+              onChange={handleIconsChange}
+              placeholder="Ajouter un emoji"
+              className="w-full"
+              creatable={true}
+            />
+          </div>
+          <Button onClick={() => handleSubmit("icon")} size="sm">
+            Save
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Vous pouvez ajouter plusieurs emojis ou n&apos;en avoir aucun.
+        </p>
       </div>
     );
   };
@@ -417,7 +468,7 @@ export function SlotsPanel() {
       </CardHeader>
       <CardContent className="space-y-6">
         {renderPropertyEditor("Couleur", "color", "color", "color")}
-        {renderPropertyEditor("Icône (URL/Emoji)", "icon", "icon")}
+        {renderIconsEditor()}
 
         {!isBreak && (
           <>

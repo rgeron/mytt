@@ -517,7 +517,9 @@ export function TimetablePreview() {
                                   <div className="w-full flex items-center justify-center overflow-hidden">
                                     {hasIcon && stripEffectiveIcon && (
                                       <span className="inline-block mr-0.5 text-[8px]">
-                                        {stripEffectiveIcon}
+                                        {Array.isArray(stripEffectiveIcon)
+                                          ? stripEffectiveIcon[0]
+                                          : stripEffectiveIcon}
                                       </span>
                                     )}
                                     <div
@@ -639,7 +641,9 @@ export function TimetablePreview() {
                                 <div className="flex items-center justify-center overflow-hidden">
                                   {effectiveIcon && (
                                     <span className="inline-block mr-0.5 text-[9px]">
-                                      {effectiveIcon}
+                                      {Array.isArray(effectiveIcon)
+                                        ? effectiveIcon[0]
+                                        : effectiveIcon}
                                     </span>
                                   )}
                                   <div

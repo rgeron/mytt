@@ -15,7 +15,7 @@ export type Subject = {
   name: string;
   color: string;
   subjectType: SubjectType;
-  icon?: string;
+  icon?: string[];
   abbreviation?: string;
   image?: string;
   imagePosition?: "left" | "right";
@@ -115,6 +115,7 @@ const defaultSubjects: Subject[] = [
     subjectType: "school",
     abbreviation: "Maths",
     teacherOrCoach: ["M. Pythagore", "Mme. Euclide"],
+    icon: ["🧮", "📊", "📐"],
   },
   {
     id: uuidv4(),
@@ -123,6 +124,7 @@ const defaultSubjects: Subject[] = [
     subjectType: "school",
     abbreviation: "Français",
     teacherOrCoach: ["Mme. Hugo", "M. Balzac"],
+    icon: ["📚", "✍️"],
   },
   {
     id: uuidv4(),
@@ -130,6 +132,7 @@ const defaultSubjects: Subject[] = [
     color: "#FFC300",
     subjectType: "school",
     abbreviation: "Histoire-Géographie",
+    icon: ["🌍", "📜"],
   },
   {
     id: uuidv4(),
@@ -137,6 +140,7 @@ const defaultSubjects: Subject[] = [
     color: "#DAF7A6",
     subjectType: "school",
     abbreviation: "Physique-Chimie",
+    icon: ["⚗️", "🧪", "🔬"],
   },
   {
     id: uuidv4(),
@@ -144,6 +148,7 @@ const defaultSubjects: Subject[] = [
     color: "#4CAF50",
     subjectType: "school",
     abbreviation: "SVT",
+    icon: ["🌱", "🧬", "🦠"],
   },
   {
     id: uuidv4(),
@@ -151,6 +156,7 @@ const defaultSubjects: Subject[] = [
     color: "#FFC0CB",
     subjectType: "school",
     abbreviation: "Anglais",
+    icon: ["🇬🇧", "🗣️"],
   },
   {
     id: uuidv4(),
@@ -158,6 +164,7 @@ const defaultSubjects: Subject[] = [
     color: "#F4A460",
     subjectType: "school",
     abbreviation: "Espagnol",
+    icon: ["🇪🇸", "💃"],
   },
   {
     id: uuidv4(),
@@ -165,6 +172,7 @@ const defaultSubjects: Subject[] = [
     color: "#A9A9A9",
     subjectType: "school",
     abbreviation: "Allemand",
+    icon: ["🇩🇪", "🥨"],
   },
   {
     id: uuidv4(),
@@ -172,6 +180,7 @@ const defaultSubjects: Subject[] = [
     color: "#DDA0DD",
     subjectType: "school",
     abbreviation: "Philo",
+    icon: ["🤔", "💭"],
   },
   {
     id: uuidv4(),
@@ -179,7 +188,7 @@ const defaultSubjects: Subject[] = [
     color: "#20B2AA",
     subjectType: "school",
     abbreviation: "EPS",
-    icon: "🤸",
+    icon: ["🤸", "🏃", "🏋️"],
   },
   {
     id: uuidv4(),
@@ -187,7 +196,7 @@ const defaultSubjects: Subject[] = [
     color: "#FF69B4",
     subjectType: "school",
     abbreviation: "Musique",
-    icon: "🎼",
+    icon: ["🎼", "🎵", "🎹"],
   },
   {
     id: uuidv4(),
@@ -195,7 +204,7 @@ const defaultSubjects: Subject[] = [
     color: "#FFA07A",
     subjectType: "school",
     abbreviation: "ArtPlast",
-    icon: "🎨",
+    icon: ["🎨", "🖌️", "🖼️"],
   },
 
   // Extracurricular Activities (at least 10)
@@ -204,21 +213,21 @@ const defaultSubjects: Subject[] = [
     name: "Football",
     color: "#008000",
     subjectType: "extracurricular",
-    icon: "⚽",
+    icon: ["⚽", "🏟️", "🥅"],
   },
   {
     id: uuidv4(),
     name: "Danse",
     color: "#8A2BE2",
     subjectType: "extracurricular",
-    icon: "💃",
+    icon: ["💃", "🕺", "🩰"],
   },
   {
     id: uuidv4(),
     name: "Piano",
     color: "#000000",
     subjectType: "extracurricular",
-    icon: "🎹",
+    icon: ["🎹", "🎵"],
     teacherOrCoach: ["Mme. Notes"],
   },
   {
@@ -226,56 +235,56 @@ const defaultSubjects: Subject[] = [
     name: "Guitare",
     color: "#8B4513",
     subjectType: "extracurricular",
-    icon: "🎸",
+    icon: ["🎸", "🎵"],
   },
   {
     id: uuidv4(),
     name: "Théâtre",
     color: "#FF4500",
     subjectType: "extracurricular",
-    icon: "🎭",
+    icon: ["🎭", "🎬"],
   },
   {
     id: uuidv4(),
     name: "Judo",
     color: "#DC143C",
     subjectType: "extracurricular",
-    icon: "🥋",
+    icon: ["🥋", "🥇"],
   },
   {
     id: uuidv4(),
     name: "Natation",
     color: "#00FFFF",
     subjectType: "extracurricular",
-    icon: "🏊",
+    icon: ["🏊", "🏆", "🏊‍♀️"],
   },
   {
     id: uuidv4(),
     name: "Scoutisme",
     color: "#228B22",
     subjectType: "extracurricular",
-    icon: "🏕️",
+    icon: ["🏕️", "🧭", "🔥"],
   },
   {
     id: uuidv4(),
     name: "Club de Lecture",
     color: "#DEB887",
     subjectType: "extracurricular",
-    icon: "📚",
+    icon: ["📚", "📖", "☕"],
   },
   {
     id: uuidv4(),
     name: "Échecs",
     color: "#556B2F",
     subjectType: "extracurricular",
-    icon: "♟️",
+    icon: ["♟️", "🧠"],
   },
   {
     id: uuidv4(),
     name: "Bénévolat",
     color: "#FF8C00",
     subjectType: "extracurricular",
-    icon: "🤝",
+    icon: ["🤝", "❤️", "🌟"],
   },
 
   // Breaks
@@ -284,21 +293,21 @@ const defaultSubjects: Subject[] = [
     name: "Pause Déjeuner",
     color: "#D3D3D3",
     subjectType: "break",
-    icon: "🥪",
+    icon: ["🥪", "🍽️", "☕"],
   },
   {
     id: uuidv4(),
     name: "Récréation",
     color: "#A9A9A9",
     subjectType: "break",
-    icon: "🤸‍♂️",
-  }, // Changed icon slightly for variety
+    icon: ["🤸‍♂️", "⏱️", "🛝"],
+  },
   {
     id: uuidv4(),
     name: "Pause",
     color: "#E6E6FA",
     subjectType: "break",
-    icon: "☕",
+    icon: ["☕", "⏸️", "💤"],
   },
 ];
 
