@@ -270,7 +270,7 @@ export function SubjectsPanel() {
         id: "eraser-mode-active",
         name: "Mode Effaceur Actif",
         subjectType: "tool" as const,
-        color: "#757575",
+        color: "#757575", // A neutral color for the tool
       };
     }
     return subjects.find((s) => s.id === selectedActivityId);
@@ -301,22 +301,10 @@ export function SubjectsPanel() {
   }, [setSelectedActivityId, toggleEraserMode]); // Dependencies are stable store actions
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4">
       <h3 className="text-lg font-semibold leading-none tracking-tight px-1">
         Sélectionner une Activité ou Outil
       </h3>
-
-      <Button
-        variant={isEraserModeActive ? "secondary" : "outline"}
-        onClick={toggleEraserMode}
-        className="w-full justify-start h-auto p-1.5 text-sm font-normal flex items-center gap-2"
-      >
-        <EraserIcon className="mr-1.5 h-4 w-4 text-muted-foreground" />
-        Mode Effaceur
-        {isEraserModeActive && (
-          <CheckCircleIcon className="ml-auto h-4 w-4 text-primary shrink-0" />
-        )}
-      </Button>
 
       <ActivitySearchPopover
         subjectType="school"
@@ -331,65 +319,82 @@ export function SubjectsPanel() {
         label={subjectTypeLabels.break}
       />
 
-      {currentSelectedSubjectDetails && (
-        <div className="mt-auto pt-3 border-t">
-          <p className="text-xs text-muted-foreground mb-1 px-1">
-            Sélection Actuelle :
-          </p>
-          <div
-            className="p-2.5 border rounded-md flex items-center gap-3 bg-muted/30"
-            style={{
-              borderLeftColor: currentSelectedSubjectDetails.color,
-              borderLeftWidth: "4px",
-            }}
-          >
-            <span
-              style={{ backgroundColor: currentSelectedSubjectDetails.color }}
-              className="h-5 w-5 rounded-full shrink-0 border border-background/50"
-            ></span>
-            <div className="flex-1">
-              <div className="font-medium text-sm text-foreground">
-                {currentSelectedSubjectDetails.name}
-              </div>
-              {currentSelectedSubjectDetails.subjectType !== "tool" && (
-                <div className="text-xs text-muted-foreground">
-                  {
-                    subjectTypeLabels[
-                      currentSelectedSubjectDetails.subjectType as SubjectType
-                    ]
-                  }
-                  {(currentSelectedSubjectDetails as SubjectFromStore)
-                    .abbreviation &&
-                    ` (${
-                      (currentSelectedSubjectDetails as SubjectFromStore)
-                        .abbreviation
-                    })`}
-                  {(currentSelectedSubjectDetails as SubjectFromStore)
-                    .teacherOrCoach &&
-                    ` - ${
-                      (currentSelectedSubjectDetails as SubjectFromStore)
-                        .teacherOrCoach
-                    }`}
-                </div>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0"
-              onClick={() => setSelectedActivityId(null)}
-              title="Désélectionner"
+      <div className="mt-auto pt-4 flex flex-col items-center gap-4">
+        <Button
+          variant={isEraserModeActive ? "secondary" : "outline"}
+          onClick={toggleEraserMode}
+          size="icon" // Makes the button square (h-10 w-10 by default)
+          className="rounded-md" // Standard rounding for icon buttons
+          title="Mode Effaceur" // Accessibility
+        >
+          <EraserIcon className="h-5 w-5" />
+        </Button>
+
+        {currentSelectedSubjectDetails && (
+          <div className="w-full pt-3 border-t">
+            <p className="text-xs text-muted-foreground mb-1 px-1">
+              Sélection Actuelle :
+            </p>
+            <div
+              className="p-2.5 border rounded-md flex items-center gap-3 bg-muted/30"
+              style={{
+                borderLeftColor: currentSelectedSubjectDetails.color,
+                borderLeftWidth: "4px",
+              }}
             >
-              <XIcon className="h-4 w-4" />
-            </Button>
+              <span
+                style={{ backgroundColor: currentSelectedSubjectDetails.color }}
+                className="h-5 w-5 rounded-full shrink-0 border border-background/50"
+              ></span>
+              <div className="flex-1">
+                <div className="font-medium text-sm text-foreground">
+                  {currentSelectedSubjectDetails.name}
+                </div>
+                {currentSelectedSubjectDetails.subjectType !== "tool" && (
+                  <div className="text-xs text-muted-foreground">
+                    {
+                      subjectTypeLabels[
+                        currentSelectedSubjectDetails.subjectType as SubjectType
+                      ]
+                    }
+                    {(currentSelectedSubjectDetails as SubjectFromStore)
+                      .abbreviation &&
+                      ` (${
+                        (currentSelectedSubjectDetails as SubjectFromStore)
+                          .abbreviation
+                      })`}
+                    {(currentSelectedSubjectDetails as SubjectFromStore)
+                      .teacherOrCoach &&
+                      ` - ${
+                        (
+                          currentSelectedSubjectDetails as SubjectFromStore
+                        ).teacherOrCoach?.join(", ") // Ensure array is handled
+                      }`}
+                  </div>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0"
+                onClick={() => {
+                  setSelectedActivityId(null);
+                  // If eraser was active, toggling it off might be desired when deselecting its "display"
+                  if (isEraserModeActive) toggleEraserMode();
+                }}
+                title="Désélectionner"
+              >
+                <XIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
-      {!currentSelectedSubjectDetails && (
-        <div className="mt-auto pt-4 border-t text-center text-sm text-muted-foreground border-dashed">
-          Aucune activité sélectionnée.
-        </div>
-      )}
+        )}
+        {!currentSelectedSubjectDetails && (
+          <div className="w-full pt-4 border-t text-center text-sm text-muted-foreground border-dashed">
+            Aucune activité sélectionnée.
+          </div>
+        )}
+      </div>
     </div>
   );
 }
