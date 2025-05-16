@@ -4,39 +4,63 @@ import { useTimetableStore } from "@/lib/store/timetable-store";
 import React from "react";
 
 export function TimetablePrintView() {
-  const { title, subtitle, timeSlots, weekType } = useTimetableStore();
+  const {
+    title,
+    subtitle,
+    timeSlots,
+    weekType,
+    globalFont,
+    titleFont,
+    titleColor,
+    globalColor,
+    globalBackgroundColor,
+  } = useTimetableStore();
 
   return (
     <div
-      id="timetable-preview"
-      className="w-full h-full bg-white p-4 rounded-lg shadow-md border border-gray-200"
+      id="timetable-preview-print"
+      className="w-full h-full bg-white p-4"
+      style={{ fontFamily: globalFont, color: globalColor }}
     >
       <div className="text-center mb-4">
-        <h1 className="text-2xl font-bold">{title}</h1>
-        <p className="text-gray-600">{subtitle}</p>
+        <h1
+          className="text-2xl font-bold"
+          style={{ fontFamily: titleFont, color: titleColor }}
+        >
+          {title}
+        </h1>
+        <p
+          className="text-sm"
+          style={{ fontFamily: globalFont, color: globalColor }}
+        >
+          {subtitle}
+        </p>
       </div>
 
       {/* This will be the printable timetable grid */}
       <div className="grid grid-cols-6 h-[calc(100%-6rem)] border border-gray-200 rounded">
         {/* Header - Days of week */}
-        <div className="border-b border-r border-gray-300 bg-gray-50 p-2 font-medium">
+        <div
+          className="border-b border-r border-gray-300 p-2 font-medium"
+          style={{
+            backgroundColor: globalBackgroundColor,
+            color: globalColor,
+          }}
+        >
           Horaires
         </div>
-        <div className="border-b border-r border-gray-300 bg-gray-50 p-2 font-medium">
-          Lundi
-        </div>
-        <div className="border-b border-r border-gray-300 bg-gray-50 p-2 font-medium">
-          Mardi
-        </div>
-        <div className="border-b border-r border-gray-300 bg-gray-50 p-2 font-medium">
-          Mercredi
-        </div>
-        <div className="border-b border-r border-gray-300 bg-gray-50 p-2 font-medium">
-          Jeudi
-        </div>
-        <div className="border-b border-gray-300 bg-gray-50 p-2 font-medium">
-          Vendredi
-        </div>
+        {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"].map((day) => (
+          <div
+            key={day}
+            className="border-b border-r border-gray-300 p-2 font-medium"
+            style={{
+              backgroundColor: globalBackgroundColor,
+              color: globalColor,
+            }}
+          >
+            {day}
+          </div>
+        ))}
 
         {/* This would be dynamically generated based on timeSlots */}
         {timeSlots.map((slot, index) => (

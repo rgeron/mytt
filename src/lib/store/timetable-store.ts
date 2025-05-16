@@ -59,6 +59,15 @@ export type TimetableState = {
   selectedSlotForPanel: SelectedSlotInfo | null; // Added for the slots panel
   isEraserModeActive: boolean; // <-- New state for eraser mode
 
+  // New display options
+  globalFont: string;
+  titleFont: string;
+  titleColor: string;
+  globalBackgroundColor: string;
+
+  // New global color option
+  globalColor: string;
+
   // Actions
   setTitle: (title: string) => void;
   setSubtitle: (subtitle: string) => void;
@@ -91,6 +100,13 @@ export type TimetableState = {
   setSelectedSlotForPanel: (slotInfo: SelectedSlotInfo | null) => void; // Added setter
   toggleEraserMode: () => void; // <-- New action for eraser mode
   reset: () => void;
+
+  // New display option setters
+  setGlobalFont: (font: string) => void;
+  setTitleFont: (font: string) => void;
+  setTitleColor: (color: string) => void;
+  setGlobalColor: (color: string) => void;
+  setGlobalBackgroundColor: (color: string) => void;
 };
 
 const defaultTimeSlots: TimeSlot[] = [
@@ -323,6 +339,13 @@ const initialState = {
   selectedActivityId: null,
   selectedSlotForPanel: null, // Added initial state for selectedSlotForPanel
   isEraserModeActive: false, // <-- Initialize new state
+  // Initial values for new display options
+  globalFont: "Arial",
+  titleFont: "Arial",
+  titleColor: "#000000",
+  globalBackgroundColor: "#F9FAFB",
+  // Initial value for new global color option
+  globalColor: "#333333", // Default dark gray
 };
 
 export const useTimetableStore = create<TimetableState>()(
@@ -513,7 +536,34 @@ export const useTimetableStore = create<TimetableState>()(
           };
         }),
 
-      reset: () => set({ ...initialState, entries: [] }), // Ensure entries are reset correctly
+      reset: () => {
+        set({ ...initialState, entries: [] });
+        console.log("Timetable reset to initial state.");
+      },
+
+      // Initial values for new display options in store
+      globalFont: initialState.globalFont,
+      titleFont: initialState.titleFont,
+      titleColor: initialState.titleColor,
+      globalBackgroundColor: initialState.globalBackgroundColor,
+
+      // Initial value for new global color option in store
+      globalColor: initialState.globalColor,
+
+      // Setters for new display options
+      setGlobalFont: (font) =>
+        set((state) => {
+          // If title font was using the old global font, update it too
+          if (state.titleFont === state.globalFont) {
+            return { globalFont: font, titleFont: font };
+          }
+          return { globalFont: font };
+        }),
+      setTitleFont: (font) => set({ titleFont: font }),
+      setTitleColor: (color) => set({ titleColor: color }),
+      setGlobalColor: (color) => set({ globalColor: color }),
+      setGlobalBackgroundColor: (color) =>
+        set({ globalBackgroundColor: color }),
     }),
     {
       name: "timetable-storage",

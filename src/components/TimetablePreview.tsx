@@ -38,6 +38,11 @@ export function TimetablePreview() {
     currentWeekType,
     setSelectedSlotForPanel,
     isEraserModeActive,
+    globalFont,
+    titleFont,
+    titleColor,
+    globalBackgroundColor,
+    globalColor,
   } = useTimetableStore();
 
   const [conflictDialogState, setConflictDialogState] = useState<{
@@ -303,13 +308,25 @@ export function TimetablePreview() {
           aspectRatio: "1.414/1",
           margin: "0 auto",
           maxHeight: "95vh",
+          fontFamily: globalFont,
+          color: globalColor,
         }}
       >
         {/* Timetable content */}
         <div className="h-full w-full p-2 flex flex-col">
           <div className="text-center mb-2">
-            <h1 className="text-2xl font-bold text-primary">{title}</h1>
-            <p className="text-muted-foreground text-sm">{subtitle}</p>
+            <h1
+              className="text-2xl font-bold text-primary"
+              style={{ fontFamily: titleFont, color: titleColor }}
+            >
+              {title}
+            </h1>
+            <p
+              className="text-sm"
+              style={{ fontFamily: globalFont, color: globalColor }}
+            >
+              {subtitle}
+            </p>
           </div>
 
           {/* Timetable grid container - uses flex-1 to take remaining space */}
@@ -324,8 +341,13 @@ export function TimetablePreview() {
             >
               {/* Header: Time column */}
               <div
-                className="bg-primary text-primary-foreground py-2 px-3 text-center font-medium text-sm"
-                style={{ gridColumn: 1, gridRow: 1 }}
+                className="py-2 px-3 text-center font-medium text-sm"
+                style={{
+                  gridColumn: 1,
+                  gridRow: 1,
+                  backgroundColor: globalBackgroundColor,
+                  color: globalColor,
+                }}
               >
                 Horaires
               </div>
@@ -334,8 +356,13 @@ export function TimetablePreview() {
               {displayDayNames.map((day, index) => (
                 <div
                   key={`day-header-${index}`}
-                  className="bg-primary text-primary-foreground py-2 px-1 text-center font-medium text-sm"
-                  style={{ gridColumn: index + 2, gridRow: 1 }}
+                  className="py-2 px-1 text-center font-medium text-sm"
+                  style={{
+                    gridColumn: index + 2,
+                    gridRow: 1,
+                    backgroundColor: globalBackgroundColor,
+                    color: globalColor,
+                  }}
                 >
                   {day}
                 </div>
@@ -552,7 +579,7 @@ export function TimetablePreview() {
                                     )}
                                     <div
                                       className={cn(
-                                        "font-semibold text-foreground truncate w-full",
+                                        "font-semibold truncate w-full",
                                         contentDensity > 2
                                           ? "text-[7px]"
                                           : showTimeLabelsInCell
@@ -600,7 +627,7 @@ export function TimetablePreview() {
                                       {hasRoom && (
                                         <div
                                           className={cn(
-                                            "flex items-center text-muted-foreground truncate w-full",
+                                            "flex items-center truncate w-full",
                                             contentDensity > 2
                                               ? "text-[5px]"
                                               : "text-[6px]"
@@ -615,7 +642,7 @@ export function TimetablePreview() {
                                       {hasTeacher && (
                                         <div
                                           className={cn(
-                                            "flex items-center text-muted-foreground truncate w-full",
+                                            "flex items-center truncate w-full",
                                             contentDensity > 2
                                               ? "text-[5px]"
                                               : "text-[6px]"
@@ -686,9 +713,7 @@ export function TimetablePreview() {
                                       showTimeLabelsInCell
                                         ? "text-[9px]"
                                         : "text-[8px]",
-                                      isBreakType
-                                        ? "text-white"
-                                        : "text-foreground"
+                                      isBreakType ? "text-white" : ""
                                     )}
                                   >
                                     {effectiveAbbreviation || effectiveName}
@@ -700,7 +725,7 @@ export function TimetablePreview() {
                               {showTimeLabelsInCell && !isBreakType && (
                                 <div className="mt-0.5 space-y-0.5 overflow-hidden">
                                   {subEntryToDisplay?.room && (
-                                    <div className="text-[7px] flex items-center text-muted-foreground truncate">
+                                    <div className="text-[7px] flex items-center truncate">
                                       <MapPin className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
                                       <span className="truncate">
                                         {subEntryToDisplay.room}
@@ -723,7 +748,7 @@ export function TimetablePreview() {
 
                                     if (hasTeachersToDisplay) {
                                       return (
-                                        <div className="text-[7px] flex items-center text-muted-foreground truncate">
+                                        <div className="text-[7px] flex items-center truncate">
                                           <Users className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
                                           <span className="truncate">
                                             {teachersToDisplay.join(", ")}
