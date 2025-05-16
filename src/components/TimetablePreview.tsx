@@ -433,6 +433,17 @@ export function TimetablePreview() {
                   );
                   const isMultiSubjectCell = uniqueSubjectIdsInCell.length > 1;
 
+                  let cellBackgroundColor: string | undefined = undefined;
+                  if (!isMultiSubjectCell && subjectToDisplay) {
+                    if (subjectToDisplay.subjectType === "break") {
+                      cellBackgroundColor = `${
+                        subjectToDisplay.color || "#333333"
+                      }20`;
+                    } else if (subjectToDisplay.color) {
+                      cellBackgroundColor = `${subjectToDisplay.color}20`;
+                    }
+                  }
+
                   return (
                     <div
                       key={`cell-${dayIndex}-${cellData.timeIndex}`}
@@ -446,11 +457,7 @@ export function TimetablePreview() {
                         gridColumn: dayIndex + 2,
                         gridRowStart: cellData.timeIndex + 2,
                         gridRowEnd: `span ${cellData.span}`,
-                        backgroundColor: isMultiSubjectCell
-                          ? undefined
-                          : subjectToDisplay?.subjectType === "break"
-                          ? `${effectiveColor || "#33333"}`
-                          : `${effectiveColor}20`,
+                        backgroundColor: cellBackgroundColor,
                         borderLeft: isMultiSubjectCell
                           ? selectedActivityId &&
                             findSubjectCb(selectedActivityId)

@@ -343,9 +343,62 @@ export const useTimetableStore = create<TimetableState>()(
           subjects: [...state.subjects, { ...subjectData, id: uuidv4() }],
         })),
       removeSubject: (id) =>
-        set((state) => ({
-          subjects: state.subjects.filter((subject) => subject.id !== id),
-        })),
+        set((state) => {
+          // First, filter out the subject from the subjects array
+          const updatedSubjects = state.subjects.filter(
+            (subject) => subject.id !== id
+          );
+
+          // Then, filter entries and clean up references to the deleted subject
+          const updatedEntries = state.entries
+            .map((entry) => {
+              // Check each week's subEntry for the subject
+              return {
+                ...entry,
+                weekA:
+                  entry.weekA && entry.weekA.subjectId !== id
+                    ? entry.weekA
+                    : undefined,
+                weekB:
+                  entry.weekB && entry.weekB.subjectId !== id
+                    ? entry.weekB
+                    : undefined,
+                weekC:
+                  entry.weekC && entry.weekC.subjectId !== id
+                    ? entry.weekC
+                    : undefined,
+              };
+            })
+            .filter((entry) => {
+              // Only keep entries that still have at least one week with a valid subject
+              return entry.weekA || entry.weekB || entry.weekC;
+            });
+
+          // Check if we need to clear the selected panel slot
+          let updatedSelectedSlotForPanel = state.selectedSlotForPanel;
+
+          // Clear selected slot panel if it's showing this subject
+          if (state.selectedSlotForPanel) {
+            const { day, timeSlotIndex } = state.selectedSlotForPanel;
+            const slotEntry = updatedEntries.find(
+              (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
+            );
+
+            // If the entry doesn't exist anymore or has been cleaned up for this subject, clear selection
+            if (!slotEntry) {
+              updatedSelectedSlotForPanel = null;
+            }
+          }
+
+          return {
+            subjects: updatedSubjects,
+            entries: updatedEntries,
+            // If the deleted subject was the selected activity, deselect it
+            selectedActivityId:
+              state.selectedActivityId === id ? null : state.selectedActivityId,
+            selectedSlotForPanel: updatedSelectedSlotForPanel,
+          };
+        }),
       updateSubject: (id, updates) =>
         set((state) => ({
           subjects: state.subjects.map((subject) =>
