@@ -495,9 +495,20 @@ export function TimetablePreview() {
                               const stripEffectiveImage = subject.image;
 
                               // Calculate content density to adjust display
-                              const hasRoom = !!subEntry.room;
+                              const specificTeachersForStrip = ensureArray(
+                                subEntry.teachers
+                              );
+                              const globalTeachersForStrip = ensureArray(
+                                subject.teacherOrCoach
+                              );
+                              const actualTeachersForStrip =
+                                specificTeachersForStrip.length > 0
+                                  ? specificTeachersForStrip
+                                  : globalTeachersForStrip;
                               const hasTeacher =
-                                ensureArray(subEntry.teachers).length > 0;
+                                actualTeachersForStrip.length > 0;
+
+                              const hasRoom = !!subEntry.room;
                               const hasIcon = !!stripEffectiveIcon;
                               const hasImage = !!stripEffectiveImage;
                               const contentDensity = [
@@ -613,9 +624,7 @@ export function TimetablePreview() {
                                           <span className="font-medium">
                                             P:
                                           </span>{" "}
-                                          {ensureArray(subEntry.teachers).join(
-                                            ", "
-                                          )}
+                                          {actualTeachersForStrip.join(", ")}
                                         </div>
                                       )}
                                     </div>
@@ -696,25 +705,32 @@ export function TimetablePreview() {
                                       {subEntryToDisplay.room}
                                     </div>
                                   )}
-                                  {Array.isArray(subEntryToDisplay?.teachers)
-                                    ? subEntryToDisplay.teachers.length > 0 && (
+                                  {(() => {
+                                    const specificTeachers = ensureArray(
+                                      subEntryToDisplay?.teachers
+                                    );
+                                    const globalTeachers = ensureArray(
+                                      subjectToDisplay?.teacherOrCoach
+                                    );
+                                    const teachersToDisplay =
+                                      specificTeachers.length > 0
+                                        ? specificTeachers
+                                        : globalTeachers;
+                                    const hasTeachersToDisplay =
+                                      teachersToDisplay.length > 0;
+
+                                    if (hasTeachersToDisplay) {
+                                      return (
                                         <div className="text-[7px] text-muted-foreground truncate">
                                           <span className="font-medium">
                                             P:
                                           </span>{" "}
-                                          {subEntryToDisplay.teachers.join(
-                                            ", "
-                                          )}
+                                          {teachersToDisplay.join(", ")}
                                         </div>
-                                      )
-                                    : subEntryToDisplay?.teachers && (
-                                        <div className="text-[7px] text-muted-foreground truncate">
-                                          <span className="font-medium">
-                                            P:
-                                          </span>{" "}
-                                          {subEntryToDisplay.teachers}
-                                        </div>
-                                      )}
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               )}
                             </div>
