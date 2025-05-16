@@ -49,22 +49,21 @@ export function DisplayPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">Display Customization</h3>
-        <p className="text-sm text-muted-foreground">
-          Modify the appearance and general information of your timetable.
-        </p>
+        <h3 className="text-lg font-medium">
+          Personnalisation de l&apos;affichage
+        </h3>
       </div>
 
       {/* Global Styling Section */}
       <div className="space-y-4 border-t pt-4">
-        <h4 className="font-medium">Global Styling</h4>
+        <h4 className="font-medium">Style Global</h4>
         <div className="space-y-1">
           <label htmlFor="global-font" className="block text-sm font-medium">
-            Global Font
+            Police Globale
           </label>
           <Select value={globalFont} onValueChange={setGlobalFont}>
             <SelectTrigger id="global-font" className="w-full">
-              <SelectValue placeholder="Select a font" />
+              <SelectValue placeholder="Sélectionnez une police" />
             </SelectTrigger>
             <SelectContent>
               {availableFonts.map((font) => (
@@ -80,7 +79,7 @@ export function DisplayPanel() {
             htmlFor="global-text-color"
             className="block text-sm font-medium"
           >
-            Global Text Color
+            Couleur Globale du Texte
           </label>
           <ColorPicker value={globalColor} onChange={setGlobalColor} />
         </div>
@@ -89,7 +88,7 @@ export function DisplayPanel() {
             htmlFor="global-bg-color"
             className="block text-sm font-medium"
           >
-            Global Background Color (Header Row)
+            Couleur d&apos;Arrière-plan Globale (Ligne d&apos;en-tête)
           </label>
           <ColorPicker
             value={globalBackgroundColor}
@@ -103,13 +102,13 @@ export function DisplayPanel() {
 
       {/* Title Styling Section */}
       <div className="space-y-4">
-        <h4 className="font-medium">Title & Subtitle</h4>
+        <h4 className="font-medium">Titre et Sous-titre</h4>
         <div className="space-y-1">
           <label
             htmlFor="timetable-title"
             className="block text-sm font-medium"
           >
-            Title Text
+            Texte du Titre
           </label>
           <input
             id="timetable-title"
@@ -117,14 +116,14 @@ export function DisplayPanel() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="border rounded p-2 w-full"
-            placeholder="My Timetable"
+            placeholder="Mon Emploi du Temps"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label htmlFor="title-font" className="block text-sm font-medium">
-              Title Font
+              Police du Titre
             </label>
             <Select
               value={
@@ -133,11 +132,11 @@ export function DisplayPanel() {
               onValueChange={handleTitleFontChange}
             >
               <SelectTrigger id="title-font" className="w-full">
-                <SelectValue placeholder="Select a font" />
+                <SelectValue placeholder="Sélectionnez une police" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__USE_GLOBAL_FONT__">
-                  Use Global Font ({globalFont})
+                  Utiliser la Police Globale ({globalFont})
                 </SelectItem>
                 {availableFonts
                   .filter((font) => font !== globalFont)
@@ -151,7 +150,7 @@ export function DisplayPanel() {
           </div>
           <div className="space-y-1">
             <label htmlFor="title-color" className="block text-sm font-medium">
-              Title Color
+              Couleur du Titre
             </label>
             <ColorPicker value={titleColor} onChange={setTitleColor} />
           </div>
@@ -162,7 +161,7 @@ export function DisplayPanel() {
             htmlFor="timetable-subtitle"
             className="block text-sm font-medium"
           >
-            Subtitle Text
+            Texte du Sous-titre
           </label>
           <input
             id="timetable-subtitle"
@@ -170,7 +169,7 @@ export function DisplayPanel() {
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             className="border rounded p-2 w-full"
-            placeholder="School Year 2023-2024"
+            placeholder="Année Scolaire 2023-2024"
           />
         </div>
       </div>

@@ -296,7 +296,7 @@ export function SlotsPanel() {
               className="w-full"
             />
             <Button onClick={() => handleSubmit(editableProperty)} size="sm">
-              Save
+              Enregistrer
             </Button>
           </div>
         </div>
@@ -315,7 +315,7 @@ export function SlotsPanel() {
             className="flex-grow"
           />
           <Button onClick={() => handleSubmit(editableProperty)} size="sm">
-            Save
+            Enregistrer
           </Button>
         </div>
       </div>
@@ -340,7 +340,7 @@ export function SlotsPanel() {
             />
           </div>
           <Button onClick={() => handleSubmit("teachers")} size="sm">
-            Save
+            Enregistrer
           </Button>
         </div>
         <div className="flex items-center space-x-2 mt-2">
@@ -387,7 +387,7 @@ export function SlotsPanel() {
             />
           </div>
           <Button onClick={() => handleSubmit("icon")} size="sm">
-            Save
+            Enregistrer
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
@@ -412,7 +412,7 @@ export function SlotsPanel() {
               className="flex-grow"
             />
             <Button onClick={() => handleSubmit("image")} size="sm">
-              Save
+              Enregistrer
             </Button>
           </div>
 
@@ -437,7 +437,7 @@ export function SlotsPanel() {
               <div className="relative w-10 h-10 border rounded overflow-hidden">
                 <img
                   src={formState.image}
-                  alt="Preview"
+                  alt="Aperçu"
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
