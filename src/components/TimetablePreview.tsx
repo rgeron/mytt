@@ -8,7 +8,7 @@ import {
   type WeekDesignation,
 } from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, MapPin, Users } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
   ConflictResolutionDialog,
@@ -600,31 +600,31 @@ export function TimetablePreview() {
                                       {hasRoom && (
                                         <div
                                           className={cn(
-                                            "text-muted-foreground truncate w-full",
+                                            "flex items-center text-muted-foreground truncate w-full",
                                             contentDensity > 2
                                               ? "text-[5px]"
                                               : "text-[6px]"
                                           )}
                                         >
-                                          <span className="font-medium">
-                                            S:
-                                          </span>{" "}
-                                          {subEntry.room}
+                                          <MapPin className="h-2 w-2 mr-0.5 flex-shrink-0" />
+                                          <span className="truncate">
+                                            {subEntry.room}
+                                          </span>
                                         </div>
                                       )}
                                       {hasTeacher && (
                                         <div
                                           className={cn(
-                                            "text-muted-foreground truncate w-full",
+                                            "flex items-center text-muted-foreground truncate w-full",
                                             contentDensity > 2
                                               ? "text-[5px]"
                                               : "text-[6px]"
                                           )}
                                         >
-                                          <span className="font-medium">
-                                            P:
-                                          </span>{" "}
-                                          {actualTeachersForStrip.join(", ")}
+                                          <Users className="h-2 w-2 mr-0.5 flex-shrink-0" />
+                                          <span className="truncate">
+                                            {actualTeachersForStrip.join(", ")}
+                                          </span>
                                         </div>
                                       )}
                                     </div>
@@ -700,9 +700,11 @@ export function TimetablePreview() {
                               {showTimeLabelsInCell && !isBreakType && (
                                 <div className="mt-0.5 space-y-0.5 overflow-hidden">
                                   {subEntryToDisplay?.room && (
-                                    <div className="text-[7px] text-muted-foreground truncate">
-                                      <span className="font-medium">S:</span>{" "}
-                                      {subEntryToDisplay.room}
+                                    <div className="text-[7px] flex items-center text-muted-foreground truncate">
+                                      <MapPin className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
+                                      <span className="truncate">
+                                        {subEntryToDisplay.room}
+                                      </span>
                                     </div>
                                   )}
                                   {(() => {
@@ -721,11 +723,11 @@ export function TimetablePreview() {
 
                                     if (hasTeachersToDisplay) {
                                       return (
-                                        <div className="text-[7px] text-muted-foreground truncate">
-                                          <span className="font-medium">
-                                            P:
-                                          </span>{" "}
-                                          {teachersToDisplay.join(", ")}
+                                        <div className="text-[7px] flex items-center text-muted-foreground truncate">
+                                          <Users className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
+                                          <span className="truncate">
+                                            {teachersToDisplay.join(", ")}
+                                          </span>
                                         </div>
                                       );
                                     }
