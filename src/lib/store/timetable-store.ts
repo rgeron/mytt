@@ -492,7 +492,12 @@ export const useTimetableStore = create<TimetableState>()(
       setWeekType: (weekType) => set({ weekType }),
       setCurrentWeekType: (currentWeekType) => set({ currentWeekType }),
       setShowSaturday: (showSaturday) => set({ showSaturday }),
-      setSelectedActivityId: (id) => set({ selectedActivityId: id }),
+      setSelectedActivityId: (id) =>
+        set((state) => ({
+          selectedActivityId: id,
+          // If a new activity is selected (id is not null), deactivate eraser mode
+          isEraserModeActive: id ? false : state.isEraserModeActive,
+        })),
       setSelectedSlotForPanel: (slotInfo) =>
         set({ selectedSlotForPanel: slotInfo }),
 
