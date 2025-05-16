@@ -1,5 +1,6 @@
 "use client";
 
+import { ColorPicker } from "@/components/color-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -282,6 +283,26 @@ export function SlotsPanel() {
     editableProperty: EditableProperty,
     inputType: string = "text"
   ) => {
+    if (formField === "color") {
+      return (
+        <div className="space-y-2">
+          <Label htmlFor={formField}>{label}</Label>
+          <div className="flex items-center space-x-2">
+            <ColorPicker
+              value={formState[formField] || ""}
+              onChange={(newColor) => {
+                handleInputChange(formField, newColor);
+              }}
+              className="w-full"
+            />
+            <Button onClick={() => handleSubmit(editableProperty)} size="sm">
+              Save
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-2">
         <Label htmlFor={formField}>{label}</Label>
