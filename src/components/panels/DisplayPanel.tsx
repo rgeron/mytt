@@ -26,6 +26,8 @@ export function DisplayPanel() {
     setTitleColor,
     setGlobalColor,
     setGlobalBackgroundColor,
+    backgroundImageUrl,
+    setBackgroundImageUrl,
   } = useTimetableStore();
 
   // Mock font list - in a real app, this might come from a config or API
@@ -95,6 +97,56 @@ export function DisplayPanel() {
             onChange={setGlobalBackgroundColor}
           />
         </div>
+      </div>
+
+      {/* Separator */}
+      <hr className="my-6" />
+
+      {/* Background Image Section */}
+      <div className="space-y-4">
+        <h4 className="font-medium">Image d'Arrière-plan</h4>
+        <div className="space-y-1">
+          <label
+            htmlFor="background-image-input"
+            className="block text-sm font-medium"
+          >
+            Charger une image
+          </label>
+          <input
+            id="background-image-input"
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setBackgroundImageUrl(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+              } else {
+                setBackgroundImageUrl(null);
+              }
+            }}
+            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+          />
+        </div>
+        {backgroundImageUrl && (
+          <div className="mt-2 space-y-2">
+            <p className="text-sm">Aperçu:</p>
+            <img
+              src={backgroundImageUrl}
+              alt="Background Preview"
+              className="max-w-xs max-h-32 rounded border"
+            />
+            <button
+              onClick={() => setBackgroundImageUrl(null)}
+              className="text-sm text-red-500 hover:text-red-700"
+            >
+              Supprimer l'image
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Separator */}

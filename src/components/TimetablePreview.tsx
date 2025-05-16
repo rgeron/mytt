@@ -43,6 +43,7 @@ export function TimetablePreview() {
     titleColor,
     globalBackgroundColor,
     globalColor,
+    backgroundImageUrl,
   } = useTimetableStore();
 
   const [conflictDialogState, setConflictDialogState] = useState<{
@@ -310,23 +311,58 @@ export function TimetablePreview() {
           maxHeight: "95vh",
           fontFamily: globalFont,
           color: globalColor,
+          // Apply background image here
+          backgroundImage: backgroundImageUrl
+            ? `url(${backgroundImageUrl})`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
         {/* Timetable content */}
         <div className="h-full w-full p-2 flex flex-col">
-          <div className="text-center mb-2">
-            <h1
-              className="text-2xl font-bold text-primary"
-              style={{ fontFamily: titleFont, color: titleColor }}
+          <div className="text-center mb-2 relative">
+            {/* Wrapper for title and subtitle with semi-transparent background */}
+            <div
+              style={{
+                backgroundColor: globalBackgroundColor
+                  ? `${globalBackgroundColor}B3`
+                  : "rgba(255, 255, 255, 0.7)", // ~70% opacity
+                padding: "0.5rem 0.85rem",
+                borderRadius: "0.375rem", // Equivalent to Tailwind's rounded-md
+                display: "inline-block",
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)", // For Safari compatibility
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+              }}
             >
-              {title}
-            </h1>
-            <p
-              className="text-sm"
-              style={{ fontFamily: globalFont, color: globalColor }}
-            >
-              {subtitle}
-            </p>
+              <h1
+                className="text-2xl font-bold text-primary relative z-10"
+                style={{
+                  fontFamily: titleFont,
+                  color: titleColor,
+                  // textShadow: "1px 1px 2px black, 0 0 1em black, 0 0 0.2em black", // Remove text shadow
+                }}
+              >
+                {title}
+              </h1>
+              <p
+                className="text-sm relative z-10"
+                style={{
+                  fontFamily: globalFont,
+                  color: globalColor,
+                  // textShadow: "1px 1px 1px black, 0 0 0.5em black", // Remove text shadow
+                }}
+              >
+                {subtitle}
+              </p>
+            </div>
+            {/* Optional: Add a pseudo-element for backdrop blur if direct backdrop-filter is not sufficient or for more control 
+                This would typically be done with a ::before or ::after on this parent div, 
+                styled to cover the title/subtitle area and apply blur. 
+                However, for simplicity, text-shadow is often a good first step. 
+                If a stronger visual separation is needed, a semi-transparent blurred overlay could be added.
+            */}
           </div>
 
           {/* Timetable grid container - uses flex-1 to take remaining space */}

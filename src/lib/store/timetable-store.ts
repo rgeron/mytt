@@ -68,6 +68,9 @@ export type TimetableState = {
   // New global color option
   globalColor: string;
 
+  // New state for background image
+  backgroundImageUrl: string | null;
+
   // Actions
   setTitle: (title: string) => void;
   setSubtitle: (subtitle: string) => void;
@@ -107,6 +110,7 @@ export type TimetableState = {
   setTitleColor: (color: string) => void;
   setGlobalColor: (color: string) => void;
   setGlobalBackgroundColor: (color: string) => void;
+  setBackgroundImageUrl: (url: string | null) => void;
 };
 
 const defaultTimeSlots: TimeSlot[] = [
@@ -380,9 +384,10 @@ const initialState = {
   globalFont: "Arial",
   titleFont: "Arial",
   titleColor: "#000000",
-  globalBackgroundColor: "##d5d6d7",
+  globalBackgroundColor: "#F3F4F6", // Default global background color (e.g., light gray for header)
   // Initial value for new global color option
-  globalColor: "#333333", // Default dark gray
+  globalColor: "#000000", // Default global text color
+  backgroundImageUrl: null, // <-- Add this line for initial state
 };
 
 export const useTimetableStore = create<TimetableState>()(
@@ -601,6 +606,7 @@ export const useTimetableStore = create<TimetableState>()(
       setGlobalColor: (color) => set({ globalColor: color }),
       setGlobalBackgroundColor: (color) =>
         set({ globalBackgroundColor: color }),
+      setBackgroundImageUrl: (url) => set({ backgroundImageUrl: url }),
     }),
     {
       name: "timetable-storage",
