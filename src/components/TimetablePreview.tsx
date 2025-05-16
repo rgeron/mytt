@@ -523,10 +523,20 @@ export function TimetablePreview() {
                                   {/* Icon & Subject Name Section */}
                                   <div className="w-full flex items-center justify-center overflow-hidden">
                                     {hasIcon && stripEffectiveIcon && (
-                                      <span className="inline-block mr-0.5 text-[8px]">
-                                        {Array.isArray(stripEffectiveIcon)
-                                          ? stripEffectiveIcon[0]
-                                          : stripEffectiveIcon}
+                                      <span className="inline-flex mr-0.5 text-[8px] overflow-hidden flex-nowrap">
+                                        {Array.isArray(stripEffectiveIcon) ? (
+                                          stripEffectiveIcon.map(
+                                            (icon, idx) => (
+                                              <span key={idx} className="mx-px">
+                                                {icon}
+                                              </span>
+                                            )
+                                          )
+                                        ) : (
+                                          <span className="mx-px">
+                                            {stripEffectiveIcon}
+                                          </span>
+                                        )}
                                       </span>
                                     )}
                                     <div
@@ -647,10 +657,18 @@ export function TimetablePreview() {
                               {(!isBreakType || showTimeLabelsInCell) && (
                                 <div className="flex items-center justify-center overflow-hidden">
                                   {effectiveIcon && (
-                                    <span className="inline-block mr-0.5 text-[9px]">
-                                      {Array.isArray(effectiveIcon)
-                                        ? effectiveIcon[0]
-                                        : effectiveIcon}
+                                    <span className="inline-flex mr-0.5 text-[9px] overflow-hidden flex-nowrap">
+                                      {Array.isArray(effectiveIcon) ? (
+                                        effectiveIcon.map((icon, idx) => (
+                                          <span key={idx} className="mx-px">
+                                            {icon}
+                                          </span>
+                                        ))
+                                      ) : (
+                                        <span className="mx-px">
+                                          {effectiveIcon}
+                                        </span>
+                                      )}
                                     </span>
                                   )}
                                   <div
