@@ -9,12 +9,8 @@ import {
 import { cn } from "@/lib/utils";
 import { InfoIcon, MapPin, Users } from "lucide-react";
 // Removed useCallback, useMemo as they are now in the helper hook
-import {
-  ensureArray,
-} from "@/lib/timetable-print-utils";
-import {
-  useTimetablePrintHelpers,
-} from "@/lib/timetable-print-helpers"; // Adjust path as necessary
+import { useTimetablePrintHelpers } from "@/lib/timetable-print-helpers"; // Adjust path as necessary
+import { ensureArray } from "@/lib/timetable-print-utils";
 
 // Copied from TimetablePreview.tsx
 // DayDisplayCell interface moved to timetable-print-helpers.ts
@@ -62,24 +58,36 @@ export function TimetablePrintView() {
     <>
       <style jsx global>{`
         @media print {
+          /* --- GLOBAL COLOR ADJUST --- */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
 
+          /* --- RESET DEFAULT PAGE MARGINS --- */
           body {
             margin: 0 !important;
             padding: 0 !important;
           }
 
+          /* --- FORCE A4 LANDSCAPE AND REMOVE PRINTER MARGINS --- */
           @page {
             size: A4 landscape;
-            margin: 0.5cm;
+            margin: 0;
           }
 
+          /* ------------------------------------------------------------------
+       PRIMARY CONTAINER – MUST MATCH PAGE ORIENTATION (297 × 210 mm)
+       ------------------------------------------------------------------ */
           #timetable-preview-print {
-            width: 100% !important;
-            height: 100vh !important;
+            /* 297 mm = côté le plus long en paysage, 210 mm = côté le plus court */
+            width: 297mm !important;
+            height: 210mm !important;
+
+            /* inutile / contradictoire : supprimé → la règle ci-dessus prime */
+            /* width: 100% !important; */
+            /* height: auto !important; */
+
             max-height: none !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -92,9 +100,12 @@ export function TimetablePrintView() {
             background: white !important;
           }
 
+          /* ------------------------------------------------------------------
+       INTERNAL LAYOUT HELPERS
+       ------------------------------------------------------------------ */
           .print-container {
             width: 100% !important;
-            height: 100% !important;
+            height: 100% !important; /* remplit exactement #timetable-preview-print */
             display: flex !important;
             flex-direction: column !important;
             padding: 8px !important;
