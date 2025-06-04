@@ -3,23 +3,21 @@
 import {
   useTimetableStore,
   type Subject,
-  type TimetableEntry,
   type TimetableSubEntry,
   type WeekDesignation,
 } from "@/lib/store/timetable-store";
 import { cn } from "@/lib/utils";
 import { InfoIcon, MapPin, Users } from "lucide-react";
-import { useCallback, useMemo } from "react";
+// Removed useCallback, useMemo as they are now in the helper hook
+import {
+  ensureArray,
+} from "@/lib/timetable-print-utils";
+import {
+  useTimetablePrintHelpers,
+} from "@/lib/timetable-print-helpers"; // Adjust path as necessary
 
 // Copied from TimetablePreview.tsx
-interface DayDisplayCell {
-  timeIndex: number;
-  span: number;
-  subjectToDisplay: Subject | null;
-  subEntryToDisplay: TimetableSubEntry | undefined;
-  currentFullEntry: TimetableEntry | undefined;
-  isMerged: boolean;
-}
+// DayDisplayCell interface moved to timetable-print-helpers.ts
 
 export function TimetablePrintView() {
   const {
@@ -38,136 +36,25 @@ export function TimetablePrintView() {
     backgroundImageUrl,
   } = useTimetableStore();
 
-  // --- Helper functions and memoized values from TimetablePreview.tsx ---
-
-  const timeSlotDurations = useMemo(() => {
-    return timeSlots.map((slot) => {
-      const startTime = parseTimeToMinutes(slot.start);
-      const endTime = parseTimeToMinutes(slot.end);
-      return endTime - startTime;
-    });
-  }, [timeSlots]);
-
-  const totalDayMinutes = useMemo(() => {
-    return timeSlotDurations.reduce((sum, duration) => sum + duration, 0);
-  }, [timeSlotDurations]);
-
-  const ensureArray = (value: string | string[] | undefined): string[] => {
-    if (!value) return [];
-    return Array.isArray(value) ? value : [value];
-  };
-
-  function parseTimeToMinutes(timeString: string): number {
-    const [hours, minutes] = timeString.split(":").map(Number);
-    return hours * 60 + minutes;
-  }
-
-  const findEntryForSlotCb = useCallback(
-    (day: number, timeSlotIndex: number): TimetableEntry | undefined => {
-      return entries.find(
-        (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
-      );
-    },
-    [entries]
-  );
-
-  const findSubjectCb = useCallback(
-    (subjectId: string): Subject | undefined => {
-      return subjects.find((subject) => subject.id === subjectId);
-    },
-    [subjects]
-  );
-
-  const getSubEntryForWeek = useCallback(
-    (
-      entry: TimetableEntry | undefined,
-      week: WeekDesignation
-    ): TimetableSubEntry | undefined => {
-      if (!entry) return undefined;
-      const weekKey = `week${week.toUpperCase()}` as keyof Pick<
-        TimetableEntry,
-        "weekA" | "weekB" | "weekC"
-      >;
-      return entry[weekKey];
-    },
-    []
-  );
-
-  const dayNames = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
-  const displayDayNames = showSaturday ? [...dayNames, "Samedi"] : dayNames;
-  const numberOfDays = showSaturday ? 6 : 5;
-
-  const gridTemplateRowsValue = useMemo(() => {
-    if (timeSlots.length === 0) {
-      return "auto";
-    }
-    if (totalDayMinutes === 0) {
-      return `auto repeat(${timeSlots.length}, minmax(1px, 1fr))`;
-    }
-    const rowFractions = timeSlotDurations
-      .map((duration) => {
-        const percentage = (duration / totalDayMinutes) * 100;
-        return `${Math.max(percentage, 0.01)}fr`;
-      })
-      .join(" ");
-    return `auto ${rowFractions}`;
-  }, [timeSlots, timeSlotDurations, totalDayMinutes]);
-
-  const getProcessedDays = useMemo(() => {
-    return Array.from({ length: numberOfDays }).map((_, dayIndex) => {
-      const displayCells: DayDisplayCell[] = [];
-      let i = 0;
-      while (i < timeSlots.length) {
-        const firstSlotEntry = findEntryForSlotCb(dayIndex, i);
-
-        const getEffectiveSubEntry = (entry?: TimetableEntry) =>
-          getSubEntryForWeek(entry, currentWeekType) ||
-          getSubEntryForWeek(entry, "a") ||
-          getSubEntryForWeek(entry, "b") ||
-          getSubEntryForWeek(entry, "c");
-
-        const firstSubEntry = getEffectiveSubEntry(firstSlotEntry);
-        const firstSubject = firstSubEntry
-          ? findSubjectCb(firstSubEntry.subjectId) || null
-          : null;
-
-        let span = 1;
-        if (firstSubject) {
-          for (let j = i + 1; j < timeSlots.length; j++) {
-            const nextSlotEntry = findEntryForSlotCb(dayIndex, j);
-            const nextSubEntry = getEffectiveSubEntry(nextSlotEntry);
-            const nextSubject = nextSubEntry
-              ? findSubjectCb(nextSubEntry.subjectId) || null
-              : null;
-
-            if (nextSubject && nextSubject.id === firstSubject?.id) {
-              span++;
-            } else {
-              break;
-            }
-          }
-        }
-
-        displayCells.push({
-          timeIndex: i,
-          span: span,
-          subjectToDisplay: firstSubject,
-          subEntryToDisplay: firstSubEntry,
-          currentFullEntry: firstSlotEntry,
-          isMerged: span > 1,
-        });
-        i += span;
-      }
-      return displayCells;
-    });
-  }, [
+  // --- Use the custom hook for helper functions and memoized values ---
+  const {
+    timeSlotDurations,
+    totalDayMinutes,
+    displayDayNames,
     numberOfDays,
+    gridTemplateRowsValue,
+    getProcessedDays,
+    findSubjectCb, // findSubjectCb is returned by the hook
+  } = useTimetablePrintHelpers({
     timeSlots,
-    findEntryForSlotCb,
-    getSubEntryForWeek,
+    entries,
+    subjects,
+    showSaturday,
     currentWeekType,
-    findSubjectCb,
-  ]);
+  });
+
+  // ensureArray is imported directly
+  // parseTimeToMinutes is used internally by the hook
 
   // --- End of helper functions and memoized values ---
 
