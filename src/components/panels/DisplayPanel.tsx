@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTimetableStore } from "@/lib/store/timetable-store";
+import Image from "next/image";
 
 export function DisplayPanel() {
   const {
@@ -104,7 +105,7 @@ export function DisplayPanel() {
 
       {/* Background Image Section */}
       <div className="space-y-4">
-        <h4 className="font-medium">Image d'Arrière-plan</h4>
+        <h4 className="font-medium">Image d&apos;Arrière-plan</h4>
         <div className="space-y-1">
           <label
             htmlFor="background-image-input"
@@ -134,16 +135,21 @@ export function DisplayPanel() {
         {backgroundImageUrl && (
           <div className="mt-2 space-y-2">
             <p className="text-sm">Aperçu:</p>
-            <img
-              src={backgroundImageUrl}
-              alt="Background Preview"
-              className="max-w-xs max-h-32 rounded border"
-            />
+            <div style={{ maxWidth: '20rem', maxHeight: '8rem' }}> {/* 320px, 128px */}
+              <Image
+                src={backgroundImageUrl}
+                alt="Background Preview"
+                width={320} // Corresponds to max-w-xs
+                height={128} // Corresponds to max-h-32
+                objectFit="contain"
+                className="rounded border"
+              />
+            </div>
             <button
               onClick={() => setBackgroundImageUrl(null)}
               className="text-sm text-red-500 hover:text-red-700"
             >
-              Supprimer l'image
+              Supprimer l&apos;image
             </button>
           </div>
         )}

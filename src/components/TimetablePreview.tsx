@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { InfoIcon, MapPin, Users } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   ConflictResolutionDialog,
   type ConflictResolutionAction,
@@ -659,16 +660,12 @@ export function TimetablePreview() {
                                       {/* Conditionally show image */}
                                       {hasImage && stripEffectiveImage && (
                                         <div className="w-full flex justify-center">
-                                          <div className="w-3 h-3 overflow-hidden rounded-sm">
-                                            <img
+                                          <div className="w-3 h-3 overflow-hidden rounded-sm relative">
+                                            <Image
                                               src={stripEffectiveImage}
                                               alt=""
-                                              className="w-full h-full object-cover"
-                                              onError={(e) => {
-                                                (
-                                                  e.target as HTMLImageElement
-                                                ).style.display = "none";
-                                              }}
+                                              layout="fill"
+                                              objectFit="cover"
                                             />
                                           </div>
                                         </div>
@@ -824,16 +821,12 @@ export function TimetablePreview() {
                                 className="flex h-full w-full overflow-hidden"
                                 style={breakStyle}
                               >
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
-                                  <img
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden relative">
+                                  <Image
                                     src={effectiveImage}
                                     alt=""
-                                    className="max-h-full max-w-full object-contain"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
-                                    }}
+                                    layout="fill"
+                                    objectFit="contain"
                                   />
                                 </div>
                                 <div className="flex-1 flex items-center justify-center overflow-hidden">
@@ -855,16 +848,12 @@ export function TimetablePreview() {
                                 <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
                                 </div>
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
-                                  <img
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden relative">
+                                  <Image
                                     src={effectiveImage}
                                     alt=""
-                                    className="max-h-full max-w-full object-contain"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
-                                    }}
+                                    layout="fill"
+                                    objectFit="contain"
                                   />
                                 </div>
                               </div>

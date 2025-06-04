@@ -11,6 +11,7 @@ import { InfoIcon, MapPin, Users } from "lucide-react";
 // Removed useCallback, useMemo as they are now in the helper hook
 import { useTimetablePrintHelpers } from "@/lib/timetable-print-helpers"; // Adjust path as necessary
 import { ensureArray } from "@/lib/timetable-print-utils";
+import Image from "next/image";
 
 // Copied from TimetablePreview.tsx
 // DayDisplayCell interface moved to timetable-print-helpers.ts
@@ -472,15 +473,15 @@ export function TimetablePrintView() {
                                     >
                                       {hasImage && stripEffectiveImage && (
                                         <div className="w-full flex justify-center">
-                                          <div className="w-2 h-2 overflow-hidden rounded-sm">
-                                            <img
+                                          <div className="w-2 h-2 overflow-hidden rounded-sm relative">
+                                            <Image
                                               src={stripEffectiveImage}
                                               alt=""
-                                              className="w-full h-full object-cover"
-                                              onError={(e) => {
-                                                (
-                                                  e.target as HTMLImageElement
-                                                ).style.display = "none";
+                                              layout="fill"
+                                              objectFit="cover"
+                                              onError={() => {
+                                                // next/image handles errors, or implement custom logic
+                                                // For simplicity, direct style manipulation is removed
                                               }}
                                             />
                                           </div>
@@ -630,15 +631,14 @@ export function TimetablePrintView() {
                                 className="flex h-full w-full overflow-hidden"
                                 style={breakStyle}
                               >
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
-                                  <img
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden relative">
+                                  <Image
                                     src={effectiveImage}
                                     alt=""
-                                    className="max-h-full max-w-full object-contain"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
+                                    layout="fill"
+                                    objectFit="contain"
+                                    onError={() => {
+                                      // next/image handles errors, or implement custom logic
                                     }}
                                   />
                                 </div>
@@ -661,15 +661,14 @@ export function TimetablePrintView() {
                                 <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
                                 </div>
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
-                                  <img
+                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden relative">
+                                  <Image
                                     src={effectiveImage}
                                     alt=""
-                                    className="max-h-full max-w-full object-contain"
-                                    onError={(e) => {
-                                      (
-                                        e.target as HTMLImageElement
-                                      ).style.display = "none";
+                                    layout="fill"
+                                    objectFit="contain"
+                                    onError={() => {
+                                      // next/image handles errors, or implement custom logic
                                     }}
                                   />
                                 </div>

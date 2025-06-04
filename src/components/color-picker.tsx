@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type ColorPickerProps = {
   value: string;
@@ -42,14 +42,8 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
   const colorMapRef = useRef<HTMLDivElement>(null);
   const hueSliderRef = useRef<HTMLDivElement>(null);
 
-  // Keep local state in sync with props
-  useEffect(() => {
-    setColor(value);
-    updateHSLFromHex(value);
-  }, [value]);
-
   // Update HSL values from hex
-  const updateHSLFromHex = (hexColor: string) => {
+  const updateHSLFromHex = useCallback((hexColor: string) => {
     try {
       const rgb = hexToRgb(hexColor);
       if (rgb) {
@@ -61,7 +55,13 @@ export function ColorPicker({ value, onChange, className }: ColorPickerProps) {
     } catch {
       // If there's an error parsing, just keep current values
     }
-  };
+  }, []);
+
+  // Keep local state in sync with props
+  useEffect(() => {
+    setColor(value);
+    updateHSLFromHex(value);
+  }, [value, updateHSLFromHex]);
 
   const handleColorChange = (newColor: string) => {
     setColor(newColor);

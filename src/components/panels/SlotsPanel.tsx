@@ -19,6 +19,7 @@ import {
 } from "@/lib/store/timetable-store";
 import { ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 
 // Helper to get the week key for TimetableEntry
 function getWeekKey(
@@ -435,13 +436,11 @@ export function SlotsPanel() {
 
             {formState.image && (
               <div className="relative w-10 h-10 border rounded overflow-hidden">
-                <img
+                <Image
                   src={formState.image}
                   alt="Aperçu"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
+                  layout="fill"
+                  objectFit="cover"
                 />
               </div>
             )}
