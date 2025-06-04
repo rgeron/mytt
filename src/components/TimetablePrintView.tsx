@@ -29,12 +29,7 @@ export function TimetablePrintView() {
     subjects,
     entries,
     showSaturday,
-    // selectedActivityId, // Not needed for print
-    // addEntry, // Not needed for print
-    // removeSubEntry, // Not needed for print
     currentWeekType,
-    // setSelectedSlotForPanel, // Not needed for print
-    // isEraserModeActive, // Not needed for print
     globalFont,
     titleFont,
     titleColor,
@@ -180,37 +175,86 @@ export function TimetablePrintView() {
     <>
       <style jsx global>{`
         @media print {
-          body {
+          * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
-            margin: 0;
-            padding: 0;
           }
+
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          @page {
+            size: A4 landscape;
+            margin: 0.5cm;
+          }
+
           #timetable-preview-print {
             width: 100% !important;
-            height: auto !important; /* Let aspect ratio control height based on 100% width of print area */
-            margin: 0 auto !important;
-            padding: 0 !important; /* Remove any padding that might affect fit */
+            height: 100vh !important;
+            max-height: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
             box-shadow: none !important;
             border: none !important;
+            border-radius: 0 !important;
             page-break-inside: avoid !important;
-            overflow: hidden !important; /* Prevent content from spilling out */
-            display: block !important; /* Ensure it behaves as a block for sizing */
+            overflow: visible !important;
+            display: block !important;
+            background: white !important;
           }
-          /* If you have a specific wrapper ID around TimetablePrintView when printing, use it */
-          /* For example, if a modal with ID 'print-modal-content' hosts this component: */
-          /* #print-modal-content body > *:not(#timetable-preview-print) { display: none !important; } */
-          /* #print-modal-content #timetable-preview-print { width: 100%; height: 100%; } */
+
+          .print-container {
+            width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 8px !important;
+          }
+
+          .print-header {
+            flex-shrink: 0 !important;
+            margin-bottom: 8px !important;
+          }
+
+          .print-grid-container {
+            flex: 1 !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+          }
+
+          .print-grid {
+            width: 100% !important;
+            height: 100% !important;
+            font-size: 10px !important;
+          }
+
+          .print-cell {
+            font-size: 8px !important;
+            line-height: 1.1 !important;
+          }
+
+          .print-time-cell {
+            font-size: 7px !important;
+            padding: 2px !important;
+          }
+
+          .print-day-header {
+            font-size: 9px !important;
+            padding: 4px 2px !important;
+            font-weight: 600 !important;
+          }
         }
       `}</style>
       <div
-        id="timetable-preview-print" // Keep this ID for potential print-specific CSS
-        className="bg-white shadow-lg border border-gray-200 rounded-md overflow-hidden" // Base styling from Preview
+        id="timetable-preview-print"
+        className="bg-white shadow-lg border border-gray-200 rounded-md overflow-hidden"
         style={{
-          width: "100%", // For print, usually width is 100% of the container
-          height: "auto",
-          aspectRatio: "1.414/1", // Maintain A4 landscape aspect ratio
-          margin: "0 auto", // Center if within a larger print area
+          width: "210mm", // A4 landscape width
+          height: "297mm", // A4 landscape height (but will be constrained by content)
+          maxWidth: "100%",
+          margin: "0 auto",
           fontFamily: globalFont,
           color: globalColor,
           backgroundImage: backgroundImageUrl
@@ -220,13 +264,13 @@ export function TimetablePrintView() {
           backgroundPosition: "center",
         }}
       >
-        <div className="h-full w-full p-2 flex flex-col">
-          <div className="text-center mb-2 relative">
+        <div className="print-container h-full w-full flex flex-col">
+          <div className="print-header text-center relative">
             {backgroundImageUrl ? (
               <div
                 style={{
                   backgroundColor: globalBackgroundColor
-                    ? `${globalBackgroundColor}B3` // ~70% opacity
+                    ? `${globalBackgroundColor}B3`
                     : "rgba(255, 255, 255, 0.7)",
                   padding: "0.5rem 0.85rem",
                   borderRadius: "0.375rem",
@@ -237,7 +281,7 @@ export function TimetablePrintView() {
                 }}
               >
                 <h1
-                  className="text-2xl font-bold text-primary relative z-10"
+                  className="text-xl font-bold text-primary relative z-10"
                   style={{
                     fontFamily: titleFont,
                     color: titleColor,
@@ -246,7 +290,7 @@ export function TimetablePrintView() {
                   {title}
                 </h1>
                 <p
-                  className="text-sm relative z-10"
+                  className="text-xs relative z-10"
                   style={{
                     fontFamily: globalFont,
                     color: globalColor,
@@ -258,7 +302,7 @@ export function TimetablePrintView() {
             ) : (
               <>
                 <h1
-                  className="text-2xl font-bold text-primary"
+                  className="text-xl font-bold text-primary"
                   style={{
                     fontFamily: titleFont,
                     color: titleColor,
@@ -267,7 +311,7 @@ export function TimetablePrintView() {
                   {title}
                 </h1>
                 <p
-                  className="text-sm"
+                  className="text-xs"
                   style={{
                     fontFamily: globalFont,
                     color: globalColor,
@@ -279,16 +323,16 @@ export function TimetablePrintView() {
             )}
           </div>
 
-          <div className="flex-1 flex flex-col">
+          <div className="print-grid-container flex-1 flex flex-col min-h-0">
             <div
-              className="flex-1 grid gap-0.5 bg-gray-50 overflow-hidden rounded-md" // Minor styling adjustment for print if needed
+              className="print-grid flex-1 grid gap-0.5 bg-gray-50 overflow-visible rounded-md"
               style={{
                 gridTemplateColumns: `auto repeat(${numberOfDays}, 1fr)`,
                 gridTemplateRows: gridTemplateRowsValue,
               }}
             >
               <div
-                className="py-2 px-3 text-center font-medium text-sm" // Ensure consistent padding/text size
+                className="print-day-header py-2 px-3 text-center font-medium"
                 style={{
                   gridColumn: 1,
                   gridRow: 1,
@@ -302,7 +346,7 @@ export function TimetablePrintView() {
               {displayDayNames.map((day, index) => (
                 <div
                   key={`day-header-${index}`}
-                  className="py-2 px-1 text-center font-medium text-sm" // Ensure consistent padding/text size
+                  className="print-day-header py-2 px-1 text-center font-medium"
                   style={{
                     gridColumn: index + 2,
                     gridRow: 1,
@@ -319,13 +363,12 @@ export function TimetablePrintView() {
                   totalDayMinutes > 0
                     ? (timeSlotDurations[timeIndex] / totalDayMinutes) * 100
                     : 0;
-                // Consistent logic for showing time labels
                 const showTimeLabels = slotPercentage > 7;
 
                 return (
                   <div
                     key={`time-label-${timeIndex}`}
-                    className="bg-secondary/30 text-center text-[10px] flex flex-col items-center justify-center font-medium" // Consistent styling
+                    className="print-time-cell bg-secondary/30 text-center flex flex-col items-center justify-center font-medium"
                     style={{ gridColumn: 1, gridRow: timeIndex + 2 }}
                   >
                     {showTimeLabels && (
@@ -341,7 +384,6 @@ export function TimetablePrintView() {
 
               {getProcessedDays.map((dayCells, dayIndex) =>
                 dayCells.map((cellData) => {
-                  // Logic for showTimeLabelsInCell from TimetablePreview
                   let showTimeLabelsInCell = false;
                   if (cellData.span === 1) {
                     const slotPercentage =
@@ -410,28 +452,20 @@ export function TimetablePrintView() {
                     if (subjectToDisplay.subjectType === "break") {
                       cellBackgroundColor = `${
                         subjectToDisplay.color || "#333333"
-                      }20`; // Preview uses '20' opacity
+                      }20`;
                     } else if (subjectToDisplay.color) {
                       cellBackgroundColor = `${subjectToDisplay.color}20`;
                     }
                   }
 
-                  // Border styling for print - ensure it matches preview logic.
-                  // For print, dashed borders might render as solid or be less distinct.
-                  // Solid borders are generally safer for print.
                   let borderLeftStyle: string | undefined = undefined;
                   if (isMultiSubjectCell) {
-                    // In preview, this was a dashed border if selectedActivityId.
-                    // For print, we might simplify or use a subtle indicator, or replicate if possible.
-                    // For now, let's keep it undefined or a generic subtle border.
-                    // borderLeftStyle = "4px solid #eeeeee"; // Example subtle separator
+                    // Subtle border for multi-subject cells
                   } else if (subjectToDisplay?.subjectType === "break") {
-                    borderLeftStyle = undefined; // No border for breaks
+                    borderLeftStyle = undefined;
                   } else if (effectiveColor) {
                     borderLeftStyle = `4px solid ${effectiveColor}`;
                   } else {
-                    // In preview, this was a dashed border if selectedActivityId.
-                    // For print, this case (empty cell, no active selection) usually means no special border.
                     borderLeftStyle = undefined;
                   }
 
@@ -439,8 +473,7 @@ export function TimetablePrintView() {
                     <div
                       key={`cell-${dayIndex}-${cellData.timeIndex}`}
                       className={cn(
-                        "relative bg-card border border-border overflow-hidden" // Removed hover states and cursor for print
-                        // "transition-colors group", // Not relevant for print
+                        "print-cell relative bg-card border border-border overflow-hidden"
                       )}
                       style={{
                         gridColumn: dayIndex + 2,
@@ -448,7 +481,6 @@ export function TimetablePrintView() {
                         gridRowEnd: `span ${cellData.span}`,
                         backgroundColor: cellBackgroundColor,
                         borderLeft: borderLeftStyle,
-                        // onClick is removed for print view
                       }}
                     >
                       {isMultiSubjectCell ? (
@@ -490,17 +522,17 @@ export function TimetablePrintView() {
                                   key={`week-strip-${week}`}
                                   className={cn(
                                     "flex-1 overflow-hidden flex flex-col justify-center items-center text-center",
-                                    index < arr.length - 1 ? "border-r" : "", // Keep border-r for visual separation
-                                    contentDensity > 2 ? "p-0" : "p-0.5" // Keep padding logic
+                                    index < arr.length - 1 ? "border-r" : "",
+                                    contentDensity > 2 ? "p-0" : "p-0.5"
                                   )}
                                   style={{
                                     backgroundColor: `${stripEffectiveColor}20`,
-                                    borderColor: `${stripEffectiveColor}50`, // Keep border color for strip separation
+                                    borderColor: `${stripEffectiveColor}50`,
                                   }}
                                 >
                                   <div className="w-full flex items-center justify-center overflow-hidden">
                                     {hasIcon && stripEffectiveIcon && (
-                                      <span className="inline-flex mr-0.5 text-[8px] overflow-hidden flex-nowrap">
+                                      <span className="inline-flex mr-0.5 text-[6px] overflow-hidden flex-nowrap">
                                         {Array.isArray(stripEffectiveIcon) ? (
                                           stripEffectiveIcon.map(
                                             (icon, idx) => (
@@ -520,17 +552,17 @@ export function TimetablePrintView() {
                                       className={cn(
                                         "font-semibold truncate w-full",
                                         contentDensity > 2
-                                          ? "text-[7px]"
+                                          ? "text-[5px]"
                                           : showTimeLabelsInCell
-                                          ? "text-[8px]"
-                                          : "text-[7px]"
+                                          ? "text-[6px]"
+                                          : "text-[5px]"
                                       )}
                                     >
                                       {stripEffectiveAbbreviation ||
                                         stripEffectiveName}
                                     </div>
                                   </div>
-                                  <div className="text-[6px] text-muted-foreground/70">
+                                  <div className="text-[4px] text-muted-foreground/70">
                                     {`S. ${week.toUpperCase()}`}
                                   </div>
                                   {showTimeLabelsInCell && (
@@ -542,10 +574,10 @@ export function TimetablePrintView() {
                                     >
                                       {hasImage && stripEffectiveImage && (
                                         <div className="w-full flex justify-center">
-                                          <div className="w-3 h-3 overflow-hidden rounded-sm">
+                                          <div className="w-2 h-2 overflow-hidden rounded-sm">
                                             <img
                                               src={stripEffectiveImage}
-                                              alt="" // Alt text for accessibility, though for print might be decorative
+                                              alt=""
                                               className="w-full h-full object-cover"
                                               onError={(e) => {
                                                 (
@@ -561,11 +593,11 @@ export function TimetablePrintView() {
                                           className={cn(
                                             "flex items-center truncate w-full",
                                             contentDensity > 2
-                                              ? "text-[5px]"
-                                              : "text-[6px]"
+                                              ? "text-[4px]"
+                                              : "text-[5px]"
                                           )}
                                         >
-                                          <MapPin className="h-2 w-2 mr-0.5 flex-shrink-0" />
+                                          <MapPin className="h-1.5 w-1.5 mr-0.5 flex-shrink-0" />
                                           <span className="truncate">
                                             {subEntry.room}
                                           </span>
@@ -576,11 +608,11 @@ export function TimetablePrintView() {
                                           className={cn(
                                             "flex items-center truncate w-full",
                                             contentDensity > 2
-                                              ? "text-[5px]"
-                                              : "text-[6px]"
+                                              ? "text-[4px]"
+                                              : "text-[5px]"
                                           )}
                                         >
-                                          <Users className="h-2 w-2 mr-0.5 flex-shrink-0" />
+                                          <Users className="h-1.5 w-1.5 mr-0.5 flex-shrink-0" />
                                           <span className="truncate">
                                             {actualTeachersForStrip.join(", ")}
                                           </span>
@@ -600,15 +632,14 @@ export function TimetablePrintView() {
                           const isBreakType =
                             subjectToDisplay.subjectType === "break";
 
-                          // Style for breaks in print view
                           const breakStyle = isBreakType
                             ? {
                                 backgroundColor: `${
-                                  effectiveColor || "#333333" // Solid color for break background
+                                  effectiveColor || "#333333"
                                 }`,
                               }
                             : {
-                                backgroundColor: `${effectiveColor}20`, // Standard opacity for non-breaks
+                                backgroundColor: `${effectiveColor}20`,
                               };
 
                           const content = (
@@ -617,13 +648,13 @@ export function TimetablePrintView() {
                                 "flex flex-col w-full overflow-hidden",
                                 showTimeLabelsInCell ? "p-0.5" : "p-0.25",
                                 "text-center",
-                                isBreakType ? "text-white" : "" // Text color for breaks
+                                isBreakType ? "text-white" : ""
                               )}
                             >
                               {(!isBreakType || showTimeLabelsInCell) && (
                                 <div className="flex items-center justify-center overflow-hidden">
                                   {effectiveIcon && (
-                                    <span className="inline-flex mr-0.5 text-[9px] overflow-hidden flex-nowrap">
+                                    <span className="inline-flex mr-0.5 text-[7px] overflow-hidden flex-nowrap">
                                       {Array.isArray(effectiveIcon) ? (
                                         effectiveIcon.map((icon, idx) => (
                                           <span key={idx} className="mx-px">
@@ -641,8 +672,8 @@ export function TimetablePrintView() {
                                     className={cn(
                                       "font-semibold truncate w-full",
                                       showTimeLabelsInCell
-                                        ? "text-[9px]"
-                                        : "text-[8px]",
+                                        ? "text-[7px]"
+                                        : "text-[6px]",
                                       isBreakType ? "text-white" : ""
                                     )}
                                   >
@@ -653,8 +684,8 @@ export function TimetablePrintView() {
                               {showTimeLabelsInCell && !isBreakType && (
                                 <div className="mt-0.5 space-y-0.5 overflow-hidden">
                                   {subEntryToDisplay?.room && (
-                                    <div className="text-[7px] flex items-center truncate">
-                                      <MapPin className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
+                                    <div className="text-[5px] flex items-center truncate">
+                                      <MapPin className="h-2 w-2 mr-0.5 flex-shrink-0" />
                                       <span className="truncate">
                                         {subEntryToDisplay.room}
                                       </span>
@@ -676,8 +707,8 @@ export function TimetablePrintView() {
 
                                     if (hasTeachersToDisplay) {
                                       return (
-                                        <div className="text-[7px] flex items-center truncate">
-                                          <Users className="h-2.5 w-2.5 mr-0.5 flex-shrink-0" />
+                                        <div className="text-[5px] flex items-center truncate">
+                                          <Users className="h-2 w-2 mr-0.5 flex-shrink-0" />
                                           <span className="truncate">
                                             {teachersToDisplay.join(", ")}
                                           </span>
@@ -699,12 +730,12 @@ export function TimetablePrintView() {
                             return (
                               <div
                                 className="flex h-full w-full overflow-hidden"
-                                style={breakStyle} // Apply breakStyle which includes cell background
+                                style={breakStyle}
                               >
                                 <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
                                   <img
                                     src={effectiveImage}
-                                    alt="" // Decorative for print
+                                    alt=""
                                     className="max-h-full max-w-full object-contain"
                                     onError={(e) => {
                                       (
@@ -727,7 +758,7 @@ export function TimetablePrintView() {
                             return (
                               <div
                                 className="flex h-full w-full overflow-hidden"
-                                style={breakStyle} // Apply breakStyle
+                                style={breakStyle}
                               >
                                 <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
@@ -735,7 +766,7 @@ export function TimetablePrintView() {
                                 <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden">
                                   <img
                                     src={effectiveImage}
-                                    alt="" // Decorative for print
+                                    alt=""
                                     className="max-h-full max-w-full object-contain"
                                     onError={(e) => {
                                       (
@@ -750,22 +781,19 @@ export function TimetablePrintView() {
                           return (
                             <div
                               className="flex flex-col h-full w-full justify-center overflow-hidden"
-                              style={breakStyle} // Apply breakStyle
+                              style={breakStyle}
                             >
                               {content}
                             </div>
                           );
                         })()
                       ) : (
-                        hasAnyEntryInFirstSlot && ( // Show InfoIcon if there's data in other weeks but not current
+                        hasAnyEntryInFirstSlot && (
                           <div className="flex items-center justify-center h-full">
-                            <InfoIcon className="h-4 w-4 text-muted-foreground/50" />
+                            <InfoIcon className="h-3 w-3 text-muted-foreground/50" />
                           </div>
                         )
                       )}
-                      {/* Redundant InfoIcon from preview logic removed as it's covered by the above 'hasAnyEntryInFirstSlot'
-                          and !subjectToDisplay condition for the current week.
-                      */}
                     </div>
                   );
                 })
