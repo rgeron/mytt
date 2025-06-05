@@ -1,16 +1,16 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
   useTimetableStore,
   type Subject,
   type TimetableEntry,
   type TimetableSubEntry,
   type WeekDesignation,
-} from "@/lib/store/timetable-store";
-import { cn } from "@/lib/utils";
+} from "@/store/timetable-store";
 import { InfoIcon, MapPin, Users } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
+import { useCallback, useMemo, useState } from "react";
 import {
   ConflictResolutionDialog,
   type ConflictResolutionAction,

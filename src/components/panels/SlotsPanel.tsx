@@ -16,10 +16,10 @@ import {
   useTimetableStore,
   type TimetableEntry,
   type WeekDesignation,
-} from "@/lib/store/timetable-store";
+} from "@/store/timetable-store";
 import { ExternalLink } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Helper to get the week key for TimetableEntry
 function getWeekKey(

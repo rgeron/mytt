@@ -10,12 +10,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type {
   Subject,
   TimetableEntry,
   WeekDesignation,
-} from "@/lib/store/timetable-store";
-import { cn } from "@/lib/utils";
+} from "@/store/timetable-store";
 import { HandIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 

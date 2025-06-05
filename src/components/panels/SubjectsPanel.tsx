@@ -7,12 +7,12 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Subject as SubjectFromStore,
   SubjectType,
   useTimetableStore,
-} from "@/lib/store/timetable-store";
-import { cn } from "@/lib/utils";
+} from "@/store/timetable-store";
 import {
   CheckCircleIcon,
   EraserIcon,

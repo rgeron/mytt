@@ -4,13 +4,13 @@ import type {
   TimetableEntry,
   TimetableSubEntry,
   WeekDesignation,
-} from "@/lib/store/timetable-store";
+} from "@/store/timetable-store";
 import { useCallback, useMemo } from "react";
 import {
   DayDisplayCell,
-  parseTimeToMinutes,
   getDisplayDayNames,
   getNumberOfDays,
+  parseTimeToMinutes,
 } from "./timetable-print-utils";
 
 interface UseTimetablePrintHelpersProps {

@@ -4,7 +4,7 @@ import { TimelineSlot } from "@/components/timeline-slot";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { useTimetableStore } from "@/lib/store/timetable-store";
+import { useTimetableStore } from "@/store/timetable-store";
 import { Plus, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";

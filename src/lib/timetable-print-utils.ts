@@ -1,9 +1,8 @@
-
 import type {
   Subject,
   TimetableEntry,
   TimetableSubEntry,
-} from "@/lib/store/timetable-store";
+} from "@/store/timetable-store";
 
 // Interface for day display cells
 export interface DayDisplayCell {

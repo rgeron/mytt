@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTimetableStore } from "@/lib/store/timetable-store";
+import { useTimetableStore } from "@/store/timetable-store";
 import Image from "next/image";
 
 export function DisplayPanel() {
@@ -135,7 +135,9 @@ export function DisplayPanel() {
         {backgroundImageUrl && (
           <div className="mt-2 space-y-2">
             <p className="text-sm">Aperçu:</p>
-            <div style={{ maxWidth: '20rem', maxHeight: '8rem' }}> {/* 320px, 128px */}
+            <div style={{ maxWidth: "20rem", maxHeight: "8rem" }}>
+              {" "}
+              {/* 320px, 128px */}
               <Image
                 src={backgroundImageUrl}
                 alt="Background Preview"

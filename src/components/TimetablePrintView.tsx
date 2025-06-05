@@ -1,12 +1,12 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
   useTimetableStore,
   type Subject,
   type TimetableSubEntry,
   type WeekDesignation,
-} from "@/lib/store/timetable-store";
-import { cn } from "@/lib/utils";
+} from "@/store/timetable-store";
 import { InfoIcon, MapPin, Users } from "lucide-react";
 // Removed useCallback, useMemo as they are now in the helper hook
 import { useTimetablePrintHelpers } from "@/lib/timetable-print-helpers"; // Adjust path as necessary
