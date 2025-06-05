@@ -660,7 +660,7 @@ export function TimetablePreview() {
                                       {/* Conditionally show image */}
                                       {hasImage && stripEffectiveImage && (
                                         <div className="w-full flex justify-center">
-                                          <div className="w-3 h-3 overflow-hidden rounded-sm relative">
+                                          <div className="w-16 h-16 overflow-hidden rounded-sm relative">
                                             <Image
                                               src={stripEffectiveImage}
                                               alt=""
@@ -821,7 +821,7 @@ export function TimetablePreview() {
                                 className="flex h-full w-full overflow-hidden"
                                 style={breakStyle}
                               >
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden relative">
+                                <div className="h-full flex-1 flex items-center justify-center overflow-hidden relative">
                                   <Image
                                     src={effectiveImage}
                                     alt=""
@@ -848,7 +848,7 @@ export function TimetablePreview() {
                                 <div className="flex-1 flex items-center justify-center overflow-hidden">
                                   {content}
                                 </div>
-                                <div className="h-full max-w-[20%] flex-shrink-0 flex items-center justify-center p-0.5 overflow-hidden relative">
+                                <div className="h-full flex-1 flex items-center justify-center overflow-hidden relative">
                                   <Image
                                     src={effectiveImage}
                                     alt=""
