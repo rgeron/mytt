@@ -202,7 +202,7 @@ export function ConflictResolutionDialog(props: ConflictResolutionDialogProps) {
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-2xl">
+      <AlertDialogContent className="w-full max-w-lg sm:max-w-xl p-6">
         <AlertDialogHeader>
           <AlertDialogTitle>Organiser les activités</AlertDialogTitle>
           <AlertDialogDescription>
@@ -211,15 +211,15 @@ export function ConflictResolutionDialog(props: ConflictResolutionDialogProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="my-4 space-y-3">
+        <div className="mt-4 mb-4 space-y-3">
           <p className="text-sm font-medium">Nouvelle activité à placer :</p>
           {renderSubjectCard(newSubject.id, "new")}
         </div>
 
-        <div className="my-6">
-          <div className="grid grid-cols-3 gap-x-3">
+        <div className="mt-6 mb-6">
+          <div className="grid grid-cols-3 gap-x-3 overflow-x-auto">
             {weekLabels.map((week) => (
-              <div key={week} className="flex flex-col items-center">
+              <div key={week} className="flex flex-col items-center min-w-0">
                 <div className="p-1 mb-1.5 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                   Semaine {week.toUpperCase()}
                 </div>
