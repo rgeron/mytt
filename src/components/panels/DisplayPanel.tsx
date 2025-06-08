@@ -141,8 +141,8 @@ export function DisplayPanel() {
               <Image
                 src={backgroundImageUrl}
                 alt="Background Preview"
-                width={320} // Corresponds to max-w-xs
-                height={128} // Corresponds to max-h-32
+                width={100}
+                height={100}
                 objectFit="contain"
                 className="rounded border"
               />
