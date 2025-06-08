@@ -1,74 +1,35 @@
+import type {
+  SelectedSlotInfo,
+  Subject,
+  TimeSlot,
+  TimetableEntry,
+  TimetableSubEntry,
+  WeekDesignation,
+} from "@/schemas/timetable-schema";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type SubjectType = "school" | "extracurricular" | "break";
-export type WeekDesignation = "a" | "b" | "c"; // For clarity
-
-export type TimeSlot = {
-  start: string;
-  end: string;
-};
-
-export type Subject = {
-  id: string;
-  name: string;
-  color: string;
-  subjectType: SubjectType;
-  icon?: string[];
-  abbreviation?: string;
-  image?: string;
-  imagePosition?: "left" | "right";
-  teacherOrCoach?: string[];
-};
-
-// New type for a sub-entry within a week
-export type TimetableSubEntry = {
-  subjectId: string;
-  room?: string;
-  teachers?: string[];
-  notes?: string;
-};
-
-// Updated TimetableEntry type
-export type TimetableEntry = {
-  day: number; // 0 = Monday, 1 = Tuesday, etc.
-  timeSlotIndex: number;
-  weekA?: TimetableSubEntry;
-  weekB?: TimetableSubEntry;
-  weekC?: TimetableSubEntry;
-};
-
-export type SelectedSlotInfo = {
-  day: number;
-  timeSlotIndex: number;
-  // Note: weekDesignation and subjectId might be needed later for more precise targeting
-  // For now, the panel will derive context using currentWeekType
-};
-
+// === STORE STATE TYPE ===
 export type TimetableState = {
   title: string;
   subtitle: string;
   timeSlots: TimeSlot[];
   subjects: Subject[];
-  entries: TimetableEntry[]; // Uses updated TimetableEntry
+  entries: TimetableEntry[];
   weekType: "single" | "ab" | "abc";
   currentWeekType: WeekDesignation;
   showSaturday: boolean;
   selectedActivityId: string | null;
-  selectedSlotForPanel: SelectedSlotInfo | null; // Added for the slots panel
-  isEraserModeActive: boolean; // <-- New state for eraser mode
+  selectedSlotForPanel: SelectedSlotInfo | null;
+  isEraserModeActive: boolean;
 
-  // New display options
+  // Display options
   globalFont: string;
   titleFont: string;
   titleColor: string;
   globalBackgroundColor: string;
-
-  // New global color option
   globalColor: string;
-
-  // New state for background image
   backgroundImageUrl: string | null;
 
   // Actions
@@ -100,11 +61,9 @@ export type TimetableState = {
   setCurrentWeekType: (type: WeekDesignation) => void;
   setShowSaturday: (show: boolean) => void;
   setSelectedActivityId: (id: string | null) => void;
-  setSelectedSlotForPanel: (slotInfo: SelectedSlotInfo | null) => void; // Added setter
-  toggleEraserMode: () => void; // <-- New action for eraser mode
+  setSelectedSlotForPanel: (slotInfo: SelectedSlotInfo | null) => void;
+  toggleEraserMode: () => void;
   reset: () => void;
-
-  // New display option setters
   setGlobalFont: (font: string) => void;
   setTitleFont: (font: string) => void;
   setTitleColor: (color: string) => void;
@@ -113,6 +72,7 @@ export type TimetableState = {
   setBackgroundImageUrl: (url: string | null) => void;
 };
 
+// === DEFAULT DATA ===
 const defaultTimeSlots: TimeSlot[] = [
   { start: "08:00", end: "09:00" },
   { start: "09:00", end: "10:00" },
@@ -127,7 +87,7 @@ const defaultTimeSlots: TimeSlot[] = [
 ];
 
 const defaultSubjects: Subject[] = [
-  // School Subjects (at least 10)
+  // School Subjects
   {
     id: uuidv4(),
     name: "Mathématiques",
@@ -237,13 +197,22 @@ const defaultSubjects: Subject[] = [
     teacherOrCoach: [],
   },
 
-  // Extracurricular Activities (at least 10)
+  // Extracurricular Activities
   {
     id: uuidv4(),
     name: "Football",
     color: "#008000",
     subjectType: "extracurricular",
     icon: ["⚽"],
+    abbreviation: undefined,
+    teacherOrCoach: [],
+  },
+  {
+    id: uuidv4(),
+    name: "Basketball",
+    color: "#FF6347",
+    subjectType: "extracurricular",
+    icon: ["🏀"],
     abbreviation: undefined,
     teacherOrCoach: [],
   },
@@ -373,23 +342,22 @@ const initialState = {
   subtitle: "",
   timeSlots: defaultTimeSlots,
   subjects: defaultSubjects,
-  entries: [], // Initial entries are empty, will conform to new TimetableEntry structure
+  entries: [],
   weekType: "single" as const,
   currentWeekType: "a" as WeekDesignation,
   showSaturday: false,
   selectedActivityId: null,
-  selectedSlotForPanel: null, // Added initial state for selectedSlotForPanel
-  isEraserModeActive: false, // <-- Initialize new state
-  // Initial values for new display options
+  selectedSlotForPanel: null,
+  isEraserModeActive: false,
   globalFont: "Arial",
   titleFont: "Arial",
   titleColor: "#000000",
-  globalBackgroundColor: "#F3F4F6", // Default global background color (e.g., light gray for header)
-  // Initial value for new global color option
-  globalColor: "#000000", // Default global text color
-  backgroundImageUrl: null, // <-- Add this line for initial state
+  globalBackgroundColor: "#F3F4F6",
+  globalColor: "#000000",
+  backgroundImageUrl: null,
 };
 
+// === STORE IMPLEMENTATION ===
 export const useTimetableStore = create<TimetableState>()(
   persist(
     (set) => ({
@@ -409,15 +377,12 @@ export const useTimetableStore = create<TimetableState>()(
         })),
       removeSubject: (id) =>
         set((state) => {
-          // First, filter out the subject from the subjects array
           const updatedSubjects = state.subjects.filter(
             (subject) => subject.id !== id
           );
 
-          // Then, filter entries and clean up references to the deleted subject
           const updatedEntries = state.entries
             .map((entry) => {
-              // Check each week's subEntry for the subject
               return {
                 ...entry,
                 weekA:
@@ -435,21 +400,17 @@ export const useTimetableStore = create<TimetableState>()(
               };
             })
             .filter((entry) => {
-              // Only keep entries that still have at least one week with a valid subject
               return entry.weekA || entry.weekB || entry.weekC;
             });
 
-          // Check if we need to clear the selected panel slot
           let updatedSelectedSlotForPanel = state.selectedSlotForPanel;
 
-          // Clear selected slot panel if it's showing this subject
           if (state.selectedSlotForPanel) {
             const { day, timeSlotIndex } = state.selectedSlotForPanel;
             const slotEntry = updatedEntries.find(
               (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
             );
 
-            // If the entry doesn't exist anymore or has been cleaned up for this subject, clear selection
             if (!slotEntry) {
               updatedSelectedSlotForPanel = null;
             }
@@ -458,7 +419,6 @@ export const useTimetableStore = create<TimetableState>()(
           return {
             subjects: updatedSubjects,
             entries: updatedEntries,
-            // If the deleted subject was the selected activity, deselect it
             selectedActivityId:
               state.selectedActivityId === id ? null : state.selectedActivityId,
             selectedSlotForPanel: updatedSelectedSlotForPanel,
@@ -482,7 +442,6 @@ export const useTimetableStore = create<TimetableState>()(
           >;
 
           if (entryIndex > -1) {
-            // Entry for this slot exists, update it
             const updatedEntries = [...state.entries];
             updatedEntries[entryIndex] = {
               ...updatedEntries[entryIndex],
@@ -490,7 +449,6 @@ export const useTimetableStore = create<TimetableState>()(
             };
             return { entries: updatedEntries };
           } else {
-            // No entry for this slot, create a new one
             const newEntry: TimetableEntry = {
               day,
               timeSlotIndex,
@@ -505,7 +463,7 @@ export const useTimetableStore = create<TimetableState>()(
           const entryIndex = state.entries.findIndex(
             (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
           );
-          if (entryIndex === -1) return {}; // No entry found
+          if (entryIndex === -1) return {};
 
           const updatedEntries = [...state.entries];
           const entryToUpdate = { ...updatedEntries[entryIndex] };
@@ -514,9 +472,8 @@ export const useTimetableStore = create<TimetableState>()(
             "weekA" | "weekB" | "weekC"
           >;
 
-          delete entryToUpdate[weekKey]; // Remove the specific week's sub-entry
+          delete entryToUpdate[weekKey];
 
-          // If all week sub-entries are gone, remove the entire entry
           if (
             !entryToUpdate.weekA &&
             !entryToUpdate.weekB &&
@@ -534,7 +491,7 @@ export const useTimetableStore = create<TimetableState>()(
           const entryIndex = state.entries.findIndex(
             (e) => e.day === day && e.timeSlotIndex === timeSlotIndex
           );
-          if (entryIndex === -1) return {}; // No entry found
+          if (entryIndex === -1) return {};
 
           const updatedEntries = [...state.entries];
           const entryToUpdate = { ...updatedEntries[entryIndex] };
@@ -551,7 +508,7 @@ export const useTimetableStore = create<TimetableState>()(
             updatedEntries[entryIndex] = entryToUpdate;
             return { entries: updatedEntries };
           }
-          return {}; // Sub-entry for the week doesn't exist, do nothing (or could create it)
+          return {};
         }),
 
       setWeekType: (weekType) => set({ weekType }),
@@ -560,7 +517,6 @@ export const useTimetableStore = create<TimetableState>()(
       setSelectedActivityId: (id) =>
         set((state) => ({
           selectedActivityId: id,
-          // If a new activity is selected (id is not null), deactivate eraser mode
           isEraserModeActive: id ? false : state.isEraserModeActive,
         })),
       setSelectedSlotForPanel: (slotInfo) =>
@@ -571,7 +527,6 @@ export const useTimetableStore = create<TimetableState>()(
           const newEraserModeState = !state.isEraserModeActive;
           return {
             isEraserModeActive: newEraserModeState,
-            // If eraser mode is activated, deselect any active subject
             selectedActivityId: newEraserModeState
               ? null
               : state.selectedActivityId,
@@ -583,19 +538,8 @@ export const useTimetableStore = create<TimetableState>()(
         console.log("Timetable reset to initial state.");
       },
 
-      // Initial values for new display options in store
-      globalFont: initialState.globalFont,
-      titleFont: initialState.titleFont,
-      titleColor: initialState.titleColor,
-      globalBackgroundColor: initialState.globalBackgroundColor,
-
-      // Initial value for new global color option in store
-      globalColor: initialState.globalColor,
-
-      // Setters for new display options
       setGlobalFont: (font) =>
         set((state) => {
-          // If title font was using the old global font, update it too
           if (state.titleFont === state.globalFont) {
             return { globalFont: font, titleFont: font };
           }

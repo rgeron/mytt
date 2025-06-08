@@ -8,11 +8,11 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import {
+import type {
   Subject as SubjectFromStore,
   SubjectType,
-  useTimetableStore,
-} from "@/store/timetable-store";
+} from "@/schemas/timetable-schema";
+import { useTimetableStore } from "@/store/timetable-store";
 import {
   CheckCircleIcon,
   EraserIcon,

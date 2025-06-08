@@ -12,11 +12,11 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import {
-  useTimetableStore,
-  type TimetableEntry,
-  type WeekDesignation,
-} from "@/store/timetable-store";
+import type {
+  TimetableEntry,
+  WeekDesignation,
+} from "@/schemas/timetable-schema";
+import { useTimetableStore } from "@/store/timetable-store";
 import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";

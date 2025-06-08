@@ -3,6 +3,11 @@ import { z } from "zod";
 // Time format validator (HH:MM)
 const timeFormatRegex = /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/;
 
+// === BASE TYPES ===
+export type SubjectType = "school" | "extracurricular" | "break";
+export type WeekDesignation = "a" | "b" | "c";
+
+// === ZOD SCHEMAS ===
 export const TimeSlotSchema = z
   .object({
     start: z
@@ -47,10 +52,10 @@ export const SubjectSchema = z.object({
   icon: z.array(z.string()).optional(),
   abbreviation: z.string().optional(),
   image: z.string().url({ message: "URL d'image invalide" }).optional(),
+  imagePosition: z.enum(["left", "right"]).optional(),
   teacherOrCoach: z.array(z.string()).optional(),
 });
 
-// New schema for a sub-entry within a week
 export const TimetableSubEntrySchema = z.object({
   subjectId: z.string().min(1, "ID de matière requis pour le sous-créneau"),
   room: z.string().optional(),
@@ -60,7 +65,7 @@ export const TimetableSubEntrySchema = z.object({
 
 export const TimetableEntrySchema = z
   .object({
-    day: z.number().min(0).max(6, "Jour invalide"), // 0-5 for Mon-Sat, or 0-6 if Sunday included
+    day: z.number().min(0).max(6, "Jour invalide"),
     timeSlotIndex: z.number().min(0, "Index de créneau horaire invalide"),
     weekA: TimetableSubEntrySchema.optional(),
     weekB: TimetableSubEntrySchema.optional(),
@@ -68,20 +73,51 @@ export const TimetableEntrySchema = z
   })
   .refine((data) => data.weekA || data.weekB || data.weekC, {
     message: "Au moins un créneau hebdomadaire (A, B, ou C) doit être défini",
-    // This path might need adjustment if it doesn't point to a specific field for UI errors.
-    // Consider not having this refinement if an empty entry (no weeks filled) is permissible before interaction.
   });
+
+export const SelectedSlotInfoSchema = z.object({
+  day: z.number().min(0).max(6),
+  timeSlotIndex: z.number().min(0),
+});
 
 export const TimetableConfigSchema = z.object({
   title: z.string().min(1, "Le titre est requis"),
   subtitle: z.string().optional(),
   timeSlots: z.array(TimeSlotSchema),
   subjects: z.array(SubjectSchema),
-  entries: z.array(TimetableEntrySchema), // Updated to use the new TimetableEntrySchema
+  entries: z.array(TimetableEntrySchema),
   weekType: z.enum(["single", "ab", "abc"], {
-    required_error: "Le type de semaine est requis",
+    required_error: "Le type de semaine是 requis",
   }),
   currentWeekType: z.enum(["a", "b", "c"], {
     required_error: "Le type de semaine actuel est requis",
   }),
+  showSaturday: z.boolean().optional().default(false),
+  selectedActivityId: z.string().nullable().optional(),
+  selectedSlotForPanel: SelectedSlotInfoSchema.nullable().optional(),
+  isEraserModeActive: z.boolean().optional().default(false),
+  globalFont: z.string().optional().default("Arial"),
+  titleFont: z.string().optional().default("Arial"),
+  titleColor: z.string().optional().default("#000000"),
+  globalBackgroundColor: z.string().optional().default("#F3F4F6"),
+  globalColor: z.string().optional().default("#000000"),
+  backgroundImageUrl: z.string().url().nullable().optional(),
 });
+
+// === INFERRED TYPES ===
+export type TimeSlot = z.infer<typeof TimeSlotSchema>;
+export type Subject = z.infer<typeof SubjectSchema>;
+export type TimetableSubEntry = z.infer<typeof TimetableSubEntrySchema>;
+export type TimetableEntry = z.infer<typeof TimetableEntrySchema>;
+export type SelectedSlotInfo = z.infer<typeof SelectedSlotInfoSchema>;
+export type TimetableConfig = z.infer<typeof TimetableConfigSchema>;
+
+// === DISPLAY INTERFACES ===
+export interface DayDisplayCell {
+  timeIndex: number;
+  span: number;
+  subjectToDisplay: Subject | null;
+  subEntryToDisplay: TimetableSubEntry | undefined;
+  currentFullEntry: TimetableEntry | undefined;
+  isMerged: boolean;
+}

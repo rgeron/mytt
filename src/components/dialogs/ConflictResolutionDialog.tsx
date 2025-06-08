@@ -15,7 +15,7 @@ import type {
   Subject,
   TimetableEntry,
   WeekDesignation,
-} from "@/store/timetable-store";
+} from "@/schemas/timetable-schema";
 import { HandIcon } from "lucide-react";
 import React, { useEffect, useState } from "react";
 

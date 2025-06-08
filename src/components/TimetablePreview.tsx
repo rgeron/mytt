@@ -1,13 +1,14 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import {
-  useTimetableStore,
-  type Subject,
-  type TimetableEntry,
-  type TimetableSubEntry,
-  type WeekDesignation,
-} from "@/store/timetable-store";
+import { cn, ensureArray, parseTimeToMinutes } from "@/lib/utils";
+import type {
+  DayDisplayCell,
+  Subject,
+  TimetableEntry,
+  TimetableSubEntry,
+  WeekDesignation,
+} from "@/schemas/timetable-schema";
+import { useTimetableStore } from "@/store/timetable-store";
 import { InfoIcon, MapPin, Users } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
@@ -15,15 +16,6 @@ import {
   ConflictResolutionDialog,
   type ConflictResolutionAction,
 } from "./dialogs/ConflictResolutionDialog";
-
-interface DayDisplayCell {
-  timeIndex: number; // Starting time slot index of this display cell
-  span: number; // Number of actual time slots this display cell covers
-  subjectToDisplay: Subject | null;
-  subEntryToDisplay: TimetableSubEntry | undefined; // Contains room, teacher for the first slot
-  currentFullEntry: TimetableEntry | undefined; // Full entry object for the first slot of the span
-  isMerged: boolean;
-}
 
 export function TimetablePreview() {
   const {
@@ -67,18 +59,6 @@ export function TimetablePreview() {
   const totalDayMinutes = useMemo(() => {
     return timeSlotDurations.reduce((sum, duration) => sum + duration, 0);
   }, [timeSlotDurations]);
-
-  // Helper to ensure values are arrays
-  const ensureArray = (value: string | string[] | undefined): string[] => {
-    if (!value) return [];
-    return Array.isArray(value) ? value : [value];
-  };
-
-  // Parse time string (HH:MM) to minutes since midnight
-  function parseTimeToMinutes(timeString: string): number {
-    const [hours, minutes] = timeString.split(":").map(Number);
-    return hours * 60 + minutes;
-  }
 
   // Function to find an entry for a specific day and time slot
   const findEntryForSlotCb = useCallback(

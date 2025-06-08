@@ -1,20 +1,14 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import {
-  useTimetableStore,
-  type Subject,
-  type TimetableSubEntry,
-  type WeekDesignation,
-} from "@/store/timetable-store";
+import { cn, ensureArray, useTimetablePrintHelpers } from "@/lib/utils";
+import type {
+  Subject,
+  TimetableSubEntry,
+  WeekDesignation,
+} from "@/schemas/timetable-schema";
+import { useTimetableStore } from "@/store/timetable-store";
 import { InfoIcon, MapPin, Users } from "lucide-react";
-// Removed useCallback, useMemo as they are now in the helper hook
-import { useTimetablePrintHelpers } from "@/lib/timetable-print-helpers"; // Adjust path as necessary
-import { ensureArray } from "@/lib/timetable-print-utils";
 import Image from "next/image";
-
-// Copied from TimetablePreview.tsx
-// DayDisplayCell interface moved to timetable-print-helpers.ts
 
 export function TimetablePrintView() {
   const {
